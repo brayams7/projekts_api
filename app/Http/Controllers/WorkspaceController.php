@@ -325,9 +325,4 @@ class WorkspaceController extends Controller
           }
     }
 
-
-    public function destroy(Workspace $workspace)
-    {
-        //
-    }
 }
