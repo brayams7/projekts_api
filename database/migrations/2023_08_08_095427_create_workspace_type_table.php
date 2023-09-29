@@ -4,6 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Ramsey\Uuid\Uuid;
 
 return new class extends Migration
 {
@@ -15,7 +16,7 @@ return new class extends Migration
     public function up()
     {
         Schema::create('workspace_type', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->string('name',128);
             // $table->timestamps();
         });
@@ -24,8 +25,14 @@ return new class extends Migration
         if(Schema::hasTable('workspace_type')){
 
             DB::table('workspace_type')->insert([
-                ['name' => 'Cliente'],
-                ['name' => 'Sigel'],
+                [
+                    'id'=>Uuid::uuid4(),
+                    'name' => 'Cliente'
+                ],
+                [
+                    'id'=>Uuid::uuid4(),
+                    'name' => 'Sigel'
+                ],
             ]);
 
         }

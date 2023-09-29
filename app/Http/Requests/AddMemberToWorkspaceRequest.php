@@ -7,14 +7,14 @@ use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class StoreChangeOrderFeatureRequest extends FormRequest
+class AddMemberToWorkspaceRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      *
      * @return bool
      */
-    public function authorize():bool
+    public function authorize(): bool
     {
         return true;
     }
@@ -24,13 +24,12 @@ class StoreChangeOrderFeatureRequest extends FormRequest
      *
      * @return array<string, mixed>
      */
-    public function rules():array
+    public function rules(): array
     {
-
         return [
-            'stage_id' => 'required|uuid',
-            'newOrder' => 'required|integer',
-            'new_stage_id'=>'required|uuid',
+            'username' => 'string',
+            'email' => 'string|email|required',
+            'token' => 'string',
         ];
     }
 
@@ -42,10 +41,10 @@ class StoreChangeOrderFeatureRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'required' => 'El campo es requerido',
-            'integer' => 'El campo debe de ser de tipo entero',
+            'string' => 'El campo debe ser de tipo string',
         ];
     }
+
 
     public function failedValidation(Validator $validator)
     {

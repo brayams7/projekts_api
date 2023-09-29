@@ -14,19 +14,20 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use \Illuminate\Http\JsonResponse;
 
 class AuthController extends Controller
 {
     
     
-    public function register(Request $request)
+    public function register(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(),[
             'username' => ['required'],
             'email' => ['required','email','max:255'],
             'password' => ['required','min:6'],
             'name' => ['required'],
-            'role_id'=>['required','numeric'],
+            'role_id'=>['required','uuid'],
         ],[
             'required' => 'El Campo es requerido',
             'numeric'=>'El campo es un tipo decimal Ej: 10.00',
@@ -95,7 +96,8 @@ class AuthController extends Controller
         }
     }
 
-    public function login(Request $request){
+    public function login(Request $request): JsonResponse
+    {
         $validator = Validator::make($request->all(),[
             'email' => ['required','email','max:255'],
             'password' => ['required','min:6'],
@@ -166,7 +168,8 @@ class AuthController extends Controller
     }
 
 
-    public function refreshToken(Request $request){
+    public function refreshToken(Request $request): JsonResponse
+    {
         $authorizationHeader = $request->header('Authorization');
             
         if (!$authorizationHeader) {
@@ -213,7 +216,7 @@ class AuthController extends Controller
             if ($e instanceof \Tymon\JWTAuth\Exceptions\TokenInvalidException){
                 $r = CustomResponse::unAuthorized("Token invalido");
                 return response()->json($r, $r->code);
-                
+
             }else if ($e instanceof \Tymon\JWTAuth\Exceptions\TokenExpiredException){
                 try {
 
@@ -221,7 +224,7 @@ class AuthController extends Controller
                     $newToken = JWTAuth::refresh();
 
                     JWTAuth::setToken($newToken); //permite establecer manualmente un token JWT
-    
+
                     $payload = JWTAuth::getPayload();
                     $expires = $payload->get('exp');
                     $userId = $payload->get('sub');
@@ -230,16 +233,16 @@ class AuthController extends Controller
                     ->where('status',1)
                     ->first();
 
-                    Session::updateOrCreate( 
+                    Session::updateOrCreate(
                         [
                             'user_id'=>$user->id,
-                            
+
                         ],
                         [
                             'token'=>$newToken,
                             'expires'=>$expires
                         ],
-                        
+
                     );
 
                     // Devolvemos la respuesta con el nuevo token y el "refresh token"
@@ -255,13 +258,13 @@ class AuthController extends Controller
                     $r = CustomResponse::unAuthorized("NO autorizado");
                     return response()->json($r,$r->code);
                 }
-            
+
             }else{
                 $r = CustomResponse::unAuthorized("No autorizado");
                 return response()->json($r,$r->code);
             }
         }
-        
+
     }
 
     

@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CustomResponse;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
+    private int $status = 1;
+
     /**
      * Display a listing of the resource.
      *
@@ -20,6 +24,30 @@ class UserController extends Controller
         return response()->json([
             'data'=>$users
         ],200);
+    }
+
+    public function searchUsersByEmailOrUsername(Request $request):JsonResponse{
+        try {
+            $text = $request->query('text');
+
+            if(!$text){
+                $r = CustomResponse::ok([]);
+                return response()->json($r);
+            }
+
+            $users = User::where(function($query) use($text){
+                    $query->where('username', 'LIKE', '%' . $text . '%')
+                    ->orWhere('email', 'LIKE', '%' . $text . '%');
+                })
+                ->where("status", $this->status)
+                ->get();
+
+            $r = CustomResponse::ok($users);
+            return response()->json($r);
+        }catch (\Exception $e){
+            $r = CustomResponse::intertalServerError("Ocurrió un error en el sevidor");
+            return response()->json($r, $r->code);
+        }
     }
 
     /**
@@ -43,40 +71,6 @@ class UserController extends Controller
         //
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show(Request $request, $id)
-    {
-        $user =  User::where('id',$id)->first();
-        
-        if(!$user){
-            return response()->json([
-                'data'=>"NO existe el usuario",
-                
-                // 'permissions'=>$permissions,
-            ],404);
-        }
-
-        $user->session;
-        $role = $user->role;
-        
-        
-
-        foreach ($role->permissions as $permission){
-            $permission->pivot;
-        }
-        
-        
-        return response()->json([
-            'data'=>$user,
-            'user'=> $request->user
-            // 'permissions'=>$permissions,
-        ],200);
-    }
 
     /**
      * Show the form for editing the specified resource.

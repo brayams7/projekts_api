@@ -29,8 +29,8 @@ class StoreFeatureRequest extends FormRequest
 
         return [
             'title' => 'required|max:256',
-            'board_id' => 'required|integer',
-            'stage_id' => 'required|integer',
+            'board_id' => 'required|uuid',
+            'stage_id' => 'required|uuid',
             'due_date' => 'date_format:Y-m-d H:i:s'
         ];
     }

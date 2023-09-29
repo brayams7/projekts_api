@@ -14,9 +14,9 @@ return new class extends Migration
     public function up()
     {
         Schema::create('features', function (Blueprint $table) {
-            $table->id();
-            $table->integer("stage_id");
-            $table->integer("board_id");
+            $table->uuid('id')->primary();
+            $table->uuid("stage_id");
+            $table->uuid("board_id");
             $table->string("title",256);
             $table->longText("description")->nullable();
             $table->integer("order")->nullable();

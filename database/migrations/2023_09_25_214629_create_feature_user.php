@@ -11,13 +11,12 @@ return new class extends Migration
      *
      * @return void
      */
-    public function up()
+    public function up(): void
     {
-        Schema::create('user_workspace', function (Blueprint $table) {
-
-
+        Schema::create('feature_user', function (Blueprint $table) {
             $table->uuid('user_id');
-            $table->uuid('workspace_id');
+            $table->uuid('feature_id');
+
 
             $table->foreign("user_id")
                 ->references('id')
@@ -25,24 +24,15 @@ return new class extends Migration
                 ->onDelete("cascade")
                 ->onUpdate("cascade");
 
-            $table->foreign("workspace_id")
+            $table->foreign("feature_id")
                 ->references('id')
-                ->on('workspaces')
+                ->on('features')
                 ->onDelete("cascade")
                 ->onUpdate("cascade");
 
-            /*$table->foreignId("user_id")
-                ->constrained("users")
-                ->onDelete("cascade")
-                ->onUpdate("cascade");
+            $table->tinyInteger('is_watcher');
 
-            $table->foreignId("workspace_id")
-                ->constrained("workspaces")
-                ->onDelete("cascade")
-                ->onUpdate("cascade");*/
-
-            $table->unique(['user_id', 'workspace_id']);
-
+            $table->unique(['feature_id','user_id']);
         });
     }
 
@@ -51,8 +41,8 @@ return new class extends Migration
      *
      * @return void
      */
-    public function down()
+    public function down(): void
     {
-        Schema::dropIfExists('user_workspace');
+        Schema::dropIfExists('feature_user');
     }
 };
