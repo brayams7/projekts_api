@@ -14,13 +14,29 @@ return new class extends Migration
     public function up()
     {
         Schema::create('workspaces', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->string('name',128);
             $table->string('initials',2);
             $table->text("description");
             $table->string("color",12);
             $table->tinyInteger("status");
-            $table->foreignId('workspace_type_id')
+
+            $table->uuid('workspace_type_id');
+            $table->uuid('user_id');
+
+            $table->foreign("workspace_type_id")
+                ->references('id')
+                ->on('workspace_type')
+                ->onDelete("cascade")
+                ->onUpdate("cascade");
+
+            $table->foreign("user_id")
+                ->references('id')
+                ->on('users')
+                ->onDelete("cascade")
+                ->onUpdate("cascade");
+
+            /*$table->foreignId('workspace_type_id')
                 ->constrained('workspace_type')
                 ->onDelete('cascade')
                 ->onUpdate('cascade');
@@ -28,7 +44,8 @@ return new class extends Migration
             $table->foreignId('user_id')
                 ->constrained('users')
                 ->onDelete('cascade')
-                ->onUpdate('cascade');
+                ->onUpdate('cascade');*/
+
             $table->timestamps();
         });
     }

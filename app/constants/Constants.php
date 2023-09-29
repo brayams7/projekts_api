@@ -25,4 +25,6 @@ class Constants
         'settings'=>'settings',
         'views'=>'views'
     ];
+
+    const BASE_APP_FE = 'http://localhost:5173/';
 }

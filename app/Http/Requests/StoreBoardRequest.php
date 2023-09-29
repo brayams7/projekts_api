@@ -34,8 +34,8 @@ class StoreBoardRequest extends FormRequest
                 'bg_color' => 'nullable|string|max:12',
                 //'bg_image'=>'nullable|image|mimes:jpeg,png,jpg,svg,svg+xml,image/svg+xml,image/svg|max:2048',
                 'bg_image'=>['nullable', new SvgMimeType],
-                'user_id' => 'required|integer',
-                'workspace_id' => 'required|integer',
+                'user_id' => 'required|uuid',
+                'workspace_id' => 'required|uuid',
                 'have_default_stages' => 'required|boolean',
             ];
         }else{

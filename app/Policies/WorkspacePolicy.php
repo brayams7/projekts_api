@@ -36,6 +36,17 @@ class WorkspacePolicy
     }
 
     /**
+     * Determine whether the user can view any models.
+     *
+     * @param User $user
+     * @return Response|bool
+     */
+    public function sendInvitation(User $user): Response|bool
+    {
+        return $user->isGranted(Constants::ROLE_TYPE_ADMIN);
+    }
+
+    /**
      * Determine whether the user can update the model.
      *
      * @param User $user

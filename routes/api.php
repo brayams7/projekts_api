@@ -32,21 +32,28 @@ Route::get('/auth/refresh_token', [AuthController::class, 'refreshToken']);
 
 
 Route::controller(UserController::class)->group(function () {
-  Route::get('/users', 'index')->middleware('authorization');
-  Route::get('/users/{id}', 'show')->middleware('authorization');
+    Route::get('/users', 'index')->middleware('authorization');
+    Route::get('/users/searchUsersByEmailOrUsername', 'searchUsersByEmailOrUsername')->middleware('authorization');
 });
 
 //Workpaces types
 Route::controller(WorkspaceTypeController::class)->group(function(){
-  Route::get('/workpaces_types', 'index')->middleware('authorization');
-  Route::post('/workpaces_types', 'store')->middleware('authorization');
+    Route::get('/workpaces_types', 'index')->middleware('authorization');
+    Route::post('/workpaces_types', 'store')->middleware('authorization');
 });
 
 //Workpaces
-Route::controller(WorkspaceController::class)->group(function(){Route::get('/workpaces', 'index')->middleware('authorization');Route::post('/workpaces', 'store')->middleware('authorization');Route::put('/workpaces/{workspaceId}', 'update')->middleware('authorization');
-  Route::get('/workpace/{workspaceId}', 'getWorkspaceByID')->middleware('authorization');
-    Route::get('/workpaces/user/{id}', 'getWorkspacesUser')->middleware('authorization');Route::get('/workpaces/boards/user/{id}', 'getWorkspacesAndBoardByUser')->middleware('authorization');
-    Route::get('/workpaces/userAndMembers/{userId}', 'getWorkspacesByUserandMembers')->middleware('authorization');Route::get('/workpaces/boards/user/{id}', 'getWorkspacesAndBoardByUser')->middleware('authorization');
+Route::controller(WorkspaceController::class)->group(function(){
+    Route::get('/workpaces', 'index')->middleware('authorization');
+    Route::post('/workpaces', 'store')->middleware('authorization');
+    Route::put('/workpaces/{workspaceId}', 'update')->middleware('authorization');
+    Route::get('/workpace/{workspaceId}', 'getWorkspaceByID')->middleware('authorization');
+    Route::get('/workpaces/user/{id}', 'getWorkspacesUser')->middleware('authorization');
+    Route::get('/workpaces/boards/user/{id}', 'getWorkspacesAndBoardByUser')->middleware('authorization');
+    Route::get('/workpaces/userAndMembers/{userId}', 'getWorkspacesByUserandMembers')->middleware('authorization');
+
+    Route::post('/workspace/inviteMemberToWorkspace/{workspaceId}', 'sendInvitationEmailToWorkspace')->middleware('authorization');
+    Route::post('/workspace/acceptInvitationToWorkspace/', 'acceptInvitationToWorkspace');
 });
 
 //Boards
