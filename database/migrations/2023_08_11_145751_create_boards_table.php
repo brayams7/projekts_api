@@ -14,14 +14,29 @@ return new class extends Migration
     public function up()
     {
         Schema::create('boards', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->string("name",128);
             $table->text("description")->nullable();
             $table->string("bg_color",12)->nullable();
             $table->tinyText("bg_img")->nullable();
             $table->tinyInteger("status");
 
-            $table->foreignId('user_id')
+            $table->uuid('user_id');
+            $table->uuid('workspace_id');
+
+            $table->foreign("user_id")
+                ->references('id')
+                ->on('users')
+                ->onDelete("cascade")
+                ->onUpdate("cascade");
+
+            $table->foreign("workspace_id")
+                ->references('id')
+                ->on('workspaces')
+                ->onDelete("cascade")
+                ->onUpdate("cascade");
+
+            /*$table->foreignId('user_id')
                 ->constrained('users')
                 ->onDelete('cascade')
                 ->onUpdate('cascade');
@@ -29,7 +44,7 @@ return new class extends Migration
             $table->foreignId('workspace_id')
                 ->constrained('workspaces')
                 ->onDelete('cascade')
-                ->onUpdate('cascade');
+                ->onUpdate('cascade');*/
 
             $table->timestamps();
         });

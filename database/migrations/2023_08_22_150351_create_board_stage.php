@@ -15,7 +15,22 @@ return new class extends Migration
     {
         Schema::create('board_stage', function (Blueprint $table) {
             //$table->id();
-            $table->foreignId("board_id")
+            $table->uuid('board_id');
+            $table->uuid('stage_id');
+
+            $table->foreign("board_id")
+                ->references('id')
+                ->on('boards')
+                ->onDelete("cascade")
+                ->onUpdate("cascade");
+
+            $table->foreign("stage_id")
+                ->references('id')
+                ->on('stages')
+                ->onDelete("cascade")
+                ->onUpdate("cascade");
+
+            /*$table->foreignId("board_id")
               ->constrained("boards")
               ->onDelete("cascade")
               ->onUpdate("cascade");
@@ -23,7 +38,7 @@ return new class extends Migration
             $table->foreignId("stage_id")
               ->constrained("stages")
               ->onDelete("cascade")
-              ->onUpdate("cascade");
+              ->onUpdate("cascade");*/
 
             $table->integer("order");
             $table->unique(['board_id', 'stage_id']);

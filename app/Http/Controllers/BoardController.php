@@ -49,7 +49,7 @@ class BoardController extends Controller
      * @param  int  $idWorkspace
      * @return JsonResponse
      */
-    public function getBoardsByWorkspace(Request $request, $idWorkspace): JsonResponse
+    public function getBoardsByWorkspace(Request $request, $workspaceId): JsonResponse
     {
 
         try {
@@ -58,7 +58,7 @@ class BoardController extends Controller
             if($request->has('per_page'))  $per_page=$request->per_page;
 
             $workspace = Board::where('status', 1)
-                ->where('workspace_id', $idWorkspace)
+                ->where('workspace_id', $workspaceId)
                 ->paginate($per_page);
 
             // $data = [
@@ -100,12 +100,22 @@ class BoardController extends Controller
                 return response()->json($r, $r->code);
             }
 
-            $boards = Board::where('status', 1)
-                ->where('workspace_id', $idWorkspace)
-                ->where('user_id',$userId)
-                ->paginate($per_page);
+            /*
+             * Validar si el usuario es miebro o el dueño del espacio de trabajo
+             * */
+            $workspaceController = new WorkspaceController();
 
-            $r = CustomResponse::ok($boards);
+            $isMemberOfTheWorkspace = $workspaceController->validateIsMemberInWorkspace($user,$workspace);
+
+            if($isMemberOfTheWorkspace){
+                $boards = Board::where('status', 1)
+                    ->where('workspace_id', $idWorkspace)
+                    ->paginate($per_page);
+                $r = CustomResponse::ok($boards);
+                return response()->json($r);
+            }
+
+            $r = CustomResponse::badRequest("No es miembro o dueño de este recurso");
             return response()->json($r);
 
         } catch (Exception $e) {

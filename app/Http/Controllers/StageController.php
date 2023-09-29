@@ -37,7 +37,7 @@ class StageController extends Controller
     }*/
 
 
-    public function createStageAndAssignToBoard(StoreStageRequest $request, int $boardId){
+    public function createStageAndAssignToBoard(StoreStageRequest $request, $boardId){
 
           try {
               $description = $request->description ? $request->description : '';

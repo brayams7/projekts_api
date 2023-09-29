@@ -36,19 +36,17 @@ class Auth
 
             $request['user'] = $user;
 
+        } catch (\Tymon\JWTAuth\Exceptions\TokenInvalidException $e) {
+            $r = CustomResponse::unAuthorized("Token invalido");
+            return response()->json($r, $r->code);
+
+        } catch (\Tymon\JWTAuth\Exceptions\TokenExpiredException $e) {
+
+            $r = CustomResponse::unAuthorized("Token expirado");
+            return response()->json($r, $r->code);
         } catch (Exception $e) {
-            if ($e instanceof \Tymon\JWTAuth\Exceptions\TokenInvalidException){
-                $r = CustomResponse::unAuthorized("Token invalido");
-                return response()->json($r,$r->code);
-
-            }else if ($e instanceof \Tymon\JWTAuth\Exceptions\TokenExpiredException){
-
-                $r = CustomResponse::unAuthorized("Token expirado");
-                return response()->json($r,$r->code);
-            }else{
-                $r = CustomResponse::unAuthorized("No autorizado");
-                return response()->json($r,$r->code);
-            }
+            $r = CustomResponse::unAuthorized("No autorizado");
+            return response()->json($r, $r->code);
         }
 
         return $next($request);

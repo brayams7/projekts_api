@@ -186,7 +186,7 @@ class FeatureController extends Controller
                 'order'=>$order
             ]);
 
-            $r = CustomResponse::ok("OK");
+            $r = CustomResponse::ok("Ok");
             return response()->json($r);
 
         }catch (AuthorizationException $e){
@@ -208,7 +208,6 @@ class FeatureController extends Controller
             $newStageId = $request->new_stage_id;
             $newStage = null;
 
-            DB::beginTransaction();
 
             $feature = Feature::where('id',$featureId)
                 ->with(['stages'=>function ($query) use ($stageId){
@@ -251,6 +250,8 @@ class FeatureController extends Controller
                 return response()->json($r, $r->code);
             }
 
+            DB::beginTransaction();
+
             if(($newStage->id === $stageCurrent->id) && ($newOrderFeature !== $currentOrderFeature)){
 
                 $maxOrder = max($newOrderFeature, $currentOrderFeature);
@@ -281,6 +282,7 @@ class FeatureController extends Controller
                 $isOrder = $this->orderFeaturesWhenMovingToAnotherStage($newStage,$boardId,$newOrderFeature,$feature,true);
 
                 if(!$isOrder){
+                    DB::rollBack();
                     $r = CustomResponse::badRequest("Ocurrio un error en el servidor al ordenar las features del nuevo stage");
                     return response()->json($r, $r->code);
                 }
@@ -289,6 +291,7 @@ class FeatureController extends Controller
                 $isOrder = $this->orderFeaturesWhenMovingToAnotherStage($stageCurrent,$boardId,$currentOrderFeature,$feature,false);
 
                 if(!$isOrder){
+                    DB::rollBack();
                     $r = CustomResponse::badRequest("Ocurrio un error en el servidor al ordenar las features del anterior stage");
                     return response()->json($r, $r->code);
                 }

@@ -14,20 +14,22 @@ return new class extends Migration
     public function up()
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->string('name');
             $table->string('username');
             $table->string('email')->unique();
-            $table->text('picture_url')->default('');
-            // $table->timestamp('email_verified_at')->nullable();
+            $table->text('picture_url')->nullable();
+
             $table->string('password');
             $table->rememberToken();
-            $table->unsignedBigInteger('role_id');
-            $table->foreign('role_id')
+
+            $table->uuid('role_id');
+            $table->foreign("role_id")
                 ->references('id')
                 ->on('roles')
-                ->onDelete('cascade')
-                ->onUpdate('cascade');
+                ->onDelete("cascade")
+                ->onUpdate("cascade");
+
             
             $table->integer('status',false)->default(1);    
             $table->timestamps();

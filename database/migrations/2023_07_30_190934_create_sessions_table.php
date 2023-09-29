@@ -14,13 +14,22 @@ return new class extends Migration
     public function up()
     {
         Schema::create('sessions', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->string('token',512);
             $table->bigInteger('expires');
-            $table->foreignId('user_id')
+
+            $table->uuid('user_id');
+
+            $table->foreign("user_id")
+                ->references('id')
+                ->on('users')
+                ->onDelete("cascade")
+                ->onUpdate("cascade");
+
+            /*$table->foreignId('user_id')
                 ->constrained('users')
                 ->onDelete('cascade')
-                ->onUpdate('cascade');
+                ->onUpdate('cascade');*/
             $table->timestamps();
         });
     }

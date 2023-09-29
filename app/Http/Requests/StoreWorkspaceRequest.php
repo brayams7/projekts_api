@@ -35,8 +35,8 @@ class StoreWorkspaceRequest extends FormRequest
           'initials' => 'required|max:2',
           'description' => 'string',
           'color' => 'required|max:12',
-          'user_id' => 'required|integer',
-          'workspace_type_id' => 'required|integer'
+          'user_id' => 'required|uuid',
+          'workspace_type_id' => 'required|uuid'
         ];
       }else{
         return [
