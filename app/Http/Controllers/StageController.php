@@ -37,7 +37,8 @@ class StageController extends Controller
     }*/
 
 
-    public function createStageAndAssignToBoard(StoreStageRequest $request, $boardId){
+    public function createStageAndAssignToBoard(StoreStageRequest $request, $boardId): JsonResponse
+    {
 
           try {
               $description = $request->description ? $request->description : '';
@@ -73,7 +74,8 @@ class StageController extends Controller
           }
     }
 
-    public function changeOrderStagesByBoard(StoreBoardStageRequest $request, $boardId){
+    public function changeOrderStagesByBoard(StoreBoardStageRequest $request, $boardId): JsonResponse
+    {
         $board = Board::where('id', $boardId)
             ->where('status', $this->status)
             ->first();
@@ -131,8 +133,8 @@ class StageController extends Controller
                 return response()->json($r, $r->code);
             }
 
-            $description = $request->description ? $request->description : '';
-            $color = $request->color ? $request->color : '';
+            $description = $request->description ? $request->description : $stage->description;
+            $color = $request->color ? $request->color : $stage->color;
 
             $stage->name = $request->name;
             $stage->description = $description;

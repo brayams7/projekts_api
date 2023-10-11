@@ -205,7 +205,6 @@ class BoardController extends Controller
             $r = CustomResponse::forbidden("No autorizado");
             return response()->json($r, $r->code);
         } catch (Exception $e) {
-            echo $e;
             DB::rollBack();
             $r = CustomResponse::intertalServerError("Ocurrió un error en el sevidor");
             return response()->json($r, $r->code);
