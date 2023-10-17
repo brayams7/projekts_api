@@ -9,7 +9,9 @@ use App\Http\Controllers\StageController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use \App\Http\Controllers\FeatureController;
-
+use \App\Http\Controllers\AttachmentController;
+use \App\Http\Controllers\TaskController;
+use \App\Http\Controllers\TagController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -80,12 +82,52 @@ Route::controller(StageController::class)->group(function (){
 
 //features
 Route::controller(FeatureController::class)->group(function (){
-    //Route::get('/stagesByBoard/{boardId}', 'getListStagesByBoard')->middleware('authorization');
+    Route::get('/getDetailFeature/{boardId}', 'getDetailFeature')->middleware('authorization');
     Route::get('/listFeaturesByStage/{boardId}', 'getFeaturesByStage')->middleware('authorization');
     Route::post('/createFeature', 'createFeature')->middleware('authorization');
+    Route::put('/updateFeature/{featureId}', 'updateFeature')->middleware('authorization');
     Route::put('/changeOrderFeatureOrMovingToAnotherStage/{featureId}', 'changeOrderFeatureOrMovingToAnotherStage')->middleware('authorization');
+
+
+    Route::post('/createCommentFeature', 'createCommentFeature')->middleware('authorization');
+    Route::get('/listCommentsFeature/{featureId}', 'listCommentsFeature')->middleware('authorization');
+
+    Route::post('/addAttachmentToFeature/{featureId}', 'addAttachmentToFeature')->middleware('authorization');
+    Route::get('/listAttachmentsOfFeature/{featureId}', 'listAttachmentsOfFeature')->middleware('authorization');
+    Route::delete('/deleteAttachment/{featureId}/{attachmentId}', 'deleteAttachmentOfFeature');
+
+
+    Route::post('/assignFeatureToUser', 'assignFeatureToUser')->middleware('authorization');
+    Route::post('/deleteUserToFeature', 'deleteUserToFeature')->middleware('authorization');
+
+    Route::post('/changeVisibilityFromUserToAFeature', 'changeVisibilityFromUserToAFeature')->middleware('authorization');
+
 });
 
+//Tasks
+
+Route::controller(TaskController::class)->group(function (){
+    Route::post('/createTask', 'createTask')->middleware('authorization');
+    Route::get('/listTasks/{featureId}', 'listTaskOfFeature')->middleware('authorization');
+    Route::put('/updateTask/{taskId}', 'updateTask')->middleware('authorization');
+    Route::post('/changeAfterOrBeforeTask', 'changeAfterOrBeforeTask')->middleware('authorization');
+});
+
+//Attachment
+
+Route::controller(AttachmentController::class)->group(function (){
+    Route::post('/attachment', 'createAttachment')->middleware('authorization');
+    Route::get('/downloadAttachment/{attachmentId}', 'downloadAttachment')->middleware('authorization');
+});
+
+//tags
+
+Route::controller(TagController::class)->group(function (){
+    Route::post('/createTag', 'createTag')->middleware('authorization');
+    Route::get('/listTags', 'listTags')->middleware('authorization');
+    Route::put('/updateTag/{tagId}', 'updateTag')->middleware('authorization');
+    Route::delete('/deleteTag/{tagId}', 'deleteTag')->middleware('authorization');
+});
 
 
 // Route::middleware('auth:sanctum')->get('/user', function (Request $request) {

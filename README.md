@@ -70,4 +70,4 @@ The Laravel framework is open-sourced software licensed under the [MIT license](
 
  1. Migrar el archivo de roles (2023_07_28_163745_create_roles_table) -> php artisan migrate:refresh --path="database/migrations/2023_07_28_163745_create_roles_table.php"
  2. Migrar el resto de tablas -> php artisan migrate
- 3. 
+ 3. php artisan migrate --path="database/migrations/2023_10_11_124106_create_tasks_table.php"

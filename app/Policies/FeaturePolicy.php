@@ -49,12 +49,33 @@ class FeaturePolicy
      * Determine whether the user can update the model.
      *
      * @param User $user
-     * @param Feature $feature
      * @return Response|bool
      */
-    public function update(User $user, Feature $feature)
+    public function createComment(User $user): Response|bool
     {
-        //
+        return $user->isGranted(Constants::ROLE_TYPE_MEMBER);
+    }
+
+    /**
+     * Determine whether the user can update the model.
+     *
+     * @param User $user
+     * @return Response|bool
+     */
+    public function addAttachment(User $user): Response|bool
+    {
+        return $user->isGranted(Constants::ROLE_TYPE_MEMBER);
+    }
+
+    /**
+     * Determine whether the user can update the model.
+     *
+     * @param User $user
+     * @return Response|bool
+     */
+    public function deleteAttachment(User $user): Response|bool
+    {
+        return $user->isGranted(Constants::ROLE_TYPE_MEMBER);
     }
 
     /**
@@ -64,6 +85,61 @@ class FeaturePolicy
      * @return Response|bool
      */
     public function changeOrder(User $user): Response|bool
+    {
+        return $user->isGranted(Constants::ROLE_TYPE_MEMBER);
+    }
+
+    /**
+     * Determine whether the user can update the model.
+     *
+     * @param User $user
+     * @return Response|bool
+     */
+    public function getDetail(User $user): Response|bool
+    {
+        return $user->isGranted(Constants::ROLE_TYPE_MEMBER);
+    }
+
+    /**
+     * Determine whether the user can update the model.
+     *
+     * @param User $user
+     * @return Response|bool
+     */
+    public function assignUserToFeature(User $user): Response|bool
+    {
+        return $user->isGranted(Constants::ROLE_TYPE_ADMIN);
+    }
+
+    /**
+     * Determine whether the user can update the model.
+     *
+     * @param User $user
+     * @return Response|bool
+     */
+    public function deleteUserToFeature(User $user): Response|bool
+    {
+        return $user->isGranted(Constants::ROLE_TYPE_ADMIN);
+    }
+
+    /**
+     * Determine whether the user can update the model.
+     *
+     * @param User $user
+     * @return Response|bool
+     */
+    public function changeVisibilityFromUserToAFeaturePolicy(User $user): Response|bool
+    {
+        return $user->isGranted(Constants::ROLE_TYPE_MEMBER);
+    }
+
+    /**
+     * Determine whether the user can update the model.
+     *
+     * @param User $user
+     * @return Response|bool
+     */
+    public function updateFeaturePolicy(User $user): Response|bool
     {
         return $user->isGranted(Constants::ROLE_TYPE_MEMBER);
     }
