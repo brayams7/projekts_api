@@ -2,18 +2,26 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\AttachmentTypeNotFoundException;
+use App\Http\Requests\AssignFeatureToUserRequest;
+use App\Http\Requests\AttachmentRequest;
+use App\Http\Requests\FeatureCommentRequest;
+use App\Http\Requests\FeatureRequest;
 use App\Http\Requests\StoreChangeOrderFeatureRequest;
 use App\Http\Requests\StoreFeatureRequest;
 use App\Models\Board;
 use App\Models\CustomResponse;
 use App\Models\Feature;
+use App\Models\FeatureComment;
 use App\Models\Stage;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use \Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Mockery\Exception;
+use Ramsey\Uuid\Uuid;
 
 class FeatureController extends Controller
 {
@@ -48,6 +56,299 @@ class FeatureController extends Controller
 
         $r = CustomResponse::ok($features);
         return response()->json($r);
+    }
+
+    public function getDetailFeature(Request $request, $featureId):JsonResponse{
+        try {
+            $this->authorize("getDetail",Feature::class);
+
+            $feature = Feature::where('id',$featureId)->first();
+
+            $user = $request->user();
+
+            if(!$feature){
+                $r = CustomResponse::badRequest("El feature solicitado no exite");
+                return response()->json($r, $r->code);
+            }
+
+            $board = Board::where('id',$feature->board_id)
+                ->where('status',$this->status)
+                ->first();
+
+            if(!$board){
+                $r = CustomResponse::badRequest("Error en los datos proporcionados");
+                return response()->json($r, $r->code);
+            }
+
+            $workspace = $board->workspace;
+
+            $workspaceController =  new WorkspaceController();
+
+            $listOfUsersAddedToTheWorkspace = $workspaceController->getMembersInWorkspace($workspace);
+
+            $isMemberInWorkspace = $listOfUsersAddedToTheWorkspace->contains(function ($member) use($user){
+                return  $member->id === $user->id;
+            });
+
+            if(!$isMemberInWorkspace){
+                $r = CustomResponse::forbidden("Necesitas ser miembro del espacio de trabajo al que pertenece esta funcionalidad");
+                return response()->json($r, $r->code);
+            }
+
+            //Obtener los usuarios asignados a este feature
+            $listAssignedUsers = self::listOfUsersAssignedToTheFunctionality($feature);
+
+
+            $stages = $board->stages()
+                ->wherePivot('board_id', '>=', $board->id)
+                ->orderByPivot('order', 'asc')
+                ->get();
+
+
+            $mapListStages = $stages->map(function ($stage){
+                $order = $stage->pivot->order;
+                $stage['order'] = $order;
+                unset($stage->pivot);
+
+                return $stage;
+            });
+
+            $feature->stages = $mapListStages;
+            $feature->board = $board;
+            $feature->list_of_users_added_to_the_workspace = $listOfUsersAddedToTheWorkspace;
+            $feature->list_of_users_assigned = $listAssignedUsers;
+
+            $r = CustomResponse::ok($feature);
+            return response()->json($r);
+
+        }catch (AuthorizationException $e){
+
+            $r = CustomResponse::forbidden("No autorizado");
+            return response()->json($r, $r->code);
+
+        }catch (\Exception $e) {
+            $r = CustomResponse::intertalServerError("Ocurrió un error en el servidor");
+            return response()->json($r, $r->code);
+        }
+    }
+
+    public function listCommentsFeature(Request $request, $featureId):JsonResponse{
+        try {
+            $this->authorize("getDetail",Feature::class);
+
+            $feature = Feature::where('id',$featureId)->first();
+
+            if(!$feature){
+                $r = CustomResponse::badRequest("El feature solicitado no exite");
+                return response()->json($r, $r->code);
+            }
+
+            $comments = FeatureComment::where('feature_id', $feature->id)
+                ->with(['user'])
+                ->orderBy('created_at','desc')
+                ->get();
+
+
+            $r = CustomResponse::ok($comments);
+            return response()->json($r);
+
+        }catch (AuthorizationException $e){
+
+            $r = CustomResponse::forbidden("No autorizado");
+            return response()->json($r, $r->code);
+
+        }catch (\Exception $e) {
+            echo $e;
+            $r = CustomResponse::intertalServerError("Ocurrió un error en el servidor");
+            return response()->json($r, $r->code);
+        }
+    }
+
+    public function createCommentFeature(FeatureCommentRequest $request):JsonResponse{
+        try {
+            $this->authorize("createComment",Feature::class);
+
+            $userId = $request->user_id;
+            $featureId = $request->feature_id;
+            $comment= ($request->comment || isset($request->comment)) ? $request->comment : "";
+
+
+            $user = User::where('id', $userId)
+                ->where('status', $this->status)
+                ->first();
+
+            $feature = Feature::where('id',$featureId)->first();
+
+            if(!$feature || !$user){
+                $r = CustomResponse::badRequest("El feature solicitado no exite");
+                return response()->json($r, $r->code);
+            }
+
+            $newComment = FeatureComment::create([
+                'user_id'=>$user->id,
+                'feature_id'=>$feature->id,
+                'comment'=>$comment
+            ]);
+
+            $r = CustomResponse::ok($newComment);
+            return response()->json($r);
+
+        }catch (AuthorizationException $e){
+
+            $r = CustomResponse::forbidden("No autorizado");
+            return response()->json($r, $r->code);
+
+        }catch (\Exception $e) {
+            $r = CustomResponse::intertalServerError("Ocurrió un error en el servidor");
+            return response()->json($r, $r->code);
+        }
+    }
+
+    public function addAttachmentToFeature(AttachmentRequest $request, $featureId):JsonResponse{
+        try {
+            $this->authorize("addAttachment",Feature::class);
+
+            $feature = Feature::where('id',$featureId)->first();
+
+            if(!$feature || !$request->hasFile("file")){
+                $r = CustomResponse::badRequest("Error en las credenciales");
+                return response()->json($r, $r->code);
+            }
+
+            $file = $request->file('file');
+
+            $attachmentController = new AttachmentController();
+
+            $attachment = $attachmentController->create($file);
+
+            if(!$attachment){
+                $r = CustomResponse::badRequest("Ocurrio un error en el servidor");
+                return response()->json($r, $r->code);
+            }
+
+            $feature->attachments()->attach($attachment->id);
+
+            $r = CustomResponse::ok("OK");
+            return response()->json($r);
+
+        }catch (AuthorizationException $e){
+
+            $r = CustomResponse::forbidden("No autorizado");
+            return response()->json($r, $r->code);
+
+        }catch (AttachmentTypeNotFoundException $e) {
+
+            $r = CustomResponse::badRequest("Tipo de archivo no aceptado");
+            return response()->json($r, $r->code);
+
+        }catch (\Exception $e) {
+            $r = CustomResponse::intertalServerError("Ocurrió un error en el servidor");
+            return response()->json($r, $r->code);
+        }
+    }
+
+    public function listAttachmentsOfFeature(Request $request, $featureId):JsonResponse{
+        try {
+            $this->authorize("getDetail",Feature::class);
+
+            $feature = Feature::where('id',$featureId)
+                ->with(['attachments'=>function ($query){
+                    $query->orderBy('attachments.created_at','desc')
+                        ->with(['attachmentType']);
+                }])
+                ->first();
+
+            if(!$feature){
+                $r = CustomResponse::badRequest("El feature solicitado no exite");
+                return response()->json($r, $r->code);
+            }
+
+
+            $attachments = $feature->attachments;
+
+            $mapAttachments = $attachments->map(function ($attachment){
+                $attachment->feature_id = $attachment->pivot->feature_id;
+                $attachment->name = pathinfo(basename($attachment->url),PATHINFO_FILENAME);
+                unset($attachment->pivot);
+                return $attachment;
+            });
+
+            $r = CustomResponse::ok($mapAttachments);
+            return response()->json($r);
+
+        }catch (AuthorizationException $e){
+
+            $r = CustomResponse::forbidden("No autorizado");
+            return response()->json($r, $r->code);
+
+        }catch (\Exception $e) {
+            echo $e;
+            $r = CustomResponse::intertalServerError("Ocurrió un error en el servidor");
+            return response()->json($r, $r->code);
+        }
+    }
+
+    public function deleteAttachmentOfFeature(Request $request, $featureId, $attachmentId):JsonResponse{
+        try {
+            //$this->authorize("deleteAttachment",Feature::class);
+
+            $feature = Feature::where('id',$featureId)->first();
+
+            if(!$feature){
+                $r = CustomResponse::badRequest("Error en las credenciales");
+                return response()->json($r, $r->code);
+            }
+
+            $attachment = $feature->attachments()
+                ->wherePivot('attachment_id', $attachmentId)
+                ->first();
+
+            if(!$attachment){
+                $r = CustomResponse::badRequest("El attachment no exite");
+                return response()->json($r, $r->code);
+            }
+
+            $url = $attachment->url;
+
+            $attachmentController = new AttachmentController();
+
+            $isDelete = $attachmentController->delete($url);
+
+            if ($isDelete) {
+                $attachment->delete();
+            }
+
+            $r = CustomResponse::ok("OK");
+            return response()->json($r);
+
+        }catch (AuthorizationException $e){
+
+            $r = CustomResponse::forbidden("No autorizado");
+            return response()->json($r, $r->code);
+
+        }catch (AttachmentTypeNotFoundException $e) {
+
+            $r = CustomResponse::badRequest("Tipo de archivo no aceptado");
+            return response()->json($r, $r->code);
+
+        }catch (\Exception $e) {
+            $r = CustomResponse::intertalServerError("Ocurrió un error en el servidor");
+            return response()->json($r, $r->code);
+        }
+    }
+
+    private function listOfUsersAssignedToTheFunctionality(Feature $feature){
+        try {
+            return $feature->assignedUsers()->get()
+                ->map(function ($assignment){
+                    $isWatcher = $assignment->pivot->is_watcher;
+                    $assignment->is_watcher = $isWatcher;
+                    unset($assignment->pivot);
+                    return $assignment;
+                });
+        }catch (\Exception $e){
+            return [];
+        }
     }
 
     /**
@@ -90,7 +391,6 @@ class FeatureController extends Controller
             }
 
         }catch (\Exception $e){
-            echo "entro";
             $isOk = false;
         }
 
@@ -355,4 +655,187 @@ class FeatureController extends Controller
         }
     }
 
+    public function assignFeatureToUser(AssignFeatureToUserRequest $request):JsonResponse{
+        try {
+            $this->authorize("assignUserToFeature",Feature::class);
+
+            $featureId = $request->feature_id;
+            $userId = $request->user_id;
+            $isWatcher = $request->is_watcher;
+
+            $feature = Feature::where('id',$featureId)->first();
+
+            $user = User::where("id", $userId)
+                ->where('status', $this->status)
+                ->first();
+
+            if(!$feature || !$user){
+                $r = CustomResponse::badRequest("Error en las credenciales");
+                return response()->json($r, $r->code);
+            }
+
+            $listUserAssigned = self::listOfUsersAssignedToTheFunctionality($feature);
+            $isExistUser = $listUserAssigned->first(function ($assignment) use ($user){
+                return $assignment->user_id > $user->id;
+            });
+
+            if(!$isExistUser) {
+                $pivotAttributes = ['is_watcher'=>$isWatcher];
+                $feature->assignedUsers()->attach($user->id, $pivotAttributes);
+            }
+
+            $r = CustomResponse::ok("ok");
+            return response()->json($r);
+
+        }catch (AuthorizationException $e){
+
+            $r = CustomResponse::forbidden("No autorizado");
+            return response()->json($r, $r->code);
+
+        }catch (\Exception $e) {
+            echo $e;
+            $r = CustomResponse::intertalServerError("Ocurrió un error en el servidor");
+            return response()->json($r, $r->code);
+        }
+    }
+
+    public function deleteUserToFeature(AssignFeatureToUserRequest $request):JsonResponse{
+        try {
+            $this->authorize("deleteUserToFeature",Feature::class);
+
+            $featureId = $request->feature_id;
+            $userId = $request->user_id;
+
+            $feature = Feature::where('id',$featureId)->first();
+
+            $user = User::where("id", $userId)
+                ->where('status', $this->status)
+                ->first();
+
+            if(!$feature || !$user){
+                $r = CustomResponse::badRequest("Error en las credenciales");
+                return response()->json($r, $r->code);
+            }
+
+            /*$listUserAssigned = self::listOfUsersAssignedToTheFunctionality($feature);
+
+            $isExistUser = $listUserAssigned->first(function ($assignment) use ($user){
+                return $assignment->user_id > $user->id;
+            });*/
+
+            /*if($isExistUser) {
+
+            }*/
+            $feature->assignedUsers()->detach($user->id);
+
+            $r = CustomResponse::ok("ok");
+            return response()->json($r);
+
+        }catch (AuthorizationException $e){
+
+            $r = CustomResponse::forbidden("No autorizado");
+            return response()->json($r, $r->code);
+
+        }catch (\Exception $e) {
+            echo $e;
+            $r = CustomResponse::intertalServerError("Ocurrió un error en el servidor");
+            return response()->json($r, $r->code);
+        }
+    }
+
+    /**
+     * @param AssignFeatureToUserRequest $request
+     * @return JsonResponse
+     *
+     * Context:
+     *  este controlador cambia la visibilidad de un usuario a una funcionalidad al que fue
+     *  asignado
+     */
+    public function changeVisibilityFromUserToAFeature(AssignFeatureToUserRequest $request): JsonResponse
+    {
+        try {
+            $this->authorize("changeVisibilityFromUserToAFeaturePolicy",Feature::class);
+
+            $featureId = $request->feature_id;
+            $userId = $request->user_id;
+            $isWatcher = $request->is_watcher;
+
+            $feature = Feature::where('id',$featureId)->first();
+
+            $user = User::where("id", $userId)
+                ->where('status', $this->status)
+                ->first();
+
+            if(!$feature || !$user){
+                $r = CustomResponse::badRequest("Error en las credenciales");
+                return response()->json($r, $r->code);
+            }
+
+            /*$listUserAssigned = self::listOfUsersAssignedToTheFunctionality($feature);
+
+            $isExistUser = $listUserAssigned->first(function ($assignment) use ($user){
+                return $assignment->user_id > $user->id;
+            });*/
+
+            $pivotAttributes = ['is_watcher'=>$isWatcher];
+            $feature->assignedUsers()->updateExistingPivot($user->id, $pivotAttributes);
+
+            $r = CustomResponse::ok("ok");
+            return response()->json($r);
+
+        }catch (AuthorizationException $e){
+
+            $r = CustomResponse::forbidden("No autorizado");
+            return response()->json($r, $r->code);
+
+        }catch (\Exception $e) {
+            echo $e;
+            $r = CustomResponse::intertalServerError("Ocurrió un error en el servidor");
+            return response()->json($r, $r->code);
+        }
+    }
+
+
+    /**
+     * @param FeatureRequest $request
+     * @return JsonResponse
+     *
+     * Context:
+     *  editar una funcionalidad
+     */
+    public function updateFeature(FeatureRequest $request, $featureId):JsonResponse{
+        try {
+            $this->authorize("updateFeaturePolicy",Feature::class);
+
+            $feature = Feature::where('id',$featureId)->first();
+
+            if(!$feature){
+                $r = CustomResponse::badRequest("Error en las credenciales");
+                return response()->json($r, $r->code);
+            }
+
+            $title = $request->title ? $request->title : $feature->title;
+            //$dueDate = $request->due_date ? Carbon::parse($request->due_date)->format('Y-m-d H:i:s') : $feature->due_date;
+            $dueDate = $request->due_date ? Carbon::createFromTimestamp($request->due_date)->toDateTimeString() : $feature->due_date;
+            $description = $request->description ? trim($request->description) : $feature->description;
+
+            $feature->title = $title;
+            $feature->description = $description;
+            $feature->due_date = $dueDate;
+
+            $feature->save();
+
+            $r = CustomResponse::ok($feature);
+            return response()->json($r);
+
+        }catch (AuthorizationException $e){
+
+            $r = CustomResponse::forbidden("No autorizado");
+            return response()->json($r, $r->code);
+
+        }catch (\Exception $e) {
+            $r = CustomResponse::intertalServerError("Ocurrió un error en el servidor");
+            return response()->json($r, $r->code);
+        }
+    }
 }

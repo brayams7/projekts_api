@@ -8,6 +8,12 @@ class Constants
 {
     const DEFAULT_COLOR = '#0079bf';
     const NAME_STORAGE = 'public';
+
+    const NAME_STORAGE_CLOUD = 's3';
+    const NAME_DIRECTORY = 'attachments/';
+
+    const BASE_DIRECTORY = 'storage/';
+
     // Define más constantes según tus necesidades
 
     //ROLES TYPES

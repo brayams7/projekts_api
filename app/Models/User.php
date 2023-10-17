@@ -78,6 +78,15 @@ class User extends Authenticatable implements JWTSubject
         return [];
     }
 
+    public function  commentsFeature(){
+        return $this->hasMany(FeatureComment::class, 'user_id');
+    }
+
+    public function assignedFeatures(){
+        return $this->belongsToMany(Feature::class, 'feature_user')
+            ->withPivot('is_watcher');
+    }
+
 
     public function isGranted($roleName){
 
