@@ -339,7 +339,7 @@ class BoardController extends Controller
                 ->first();
 
             $workspace = Workspace::where('id', $request->workspace_id)
-                ->where('status', 1)
+                ->where('status', $this->status)
                 ->first();
 
 
@@ -349,11 +349,10 @@ class BoardController extends Controller
             }
 
             //Obtener los usuarios o miebros de este board
-            $workspaceController = new WorkspaceController();
+            //$workspaceController = new WorkspaceController();
 
-            $members = $workspaceController->getMembersInWorkspace($workspace);
-
-            $board->members = $members;
+            //$members = $workspaceController->getMembersInWorkspace($workspace);
+            //$board->members = $members;
 
             $board->name = $request->name;
             $board->description = $request->description;
@@ -383,7 +382,7 @@ class BoardController extends Controller
             return response()->json($r, $r->code);
 
         } catch (Exception $e) {
-            $r = CustomResponse::intertalServerError("Ocurrió un error en el sevidor");
+            $r = CustomResponse::intertalServerError("Ocurrió un error en el sevidor.");
             return response()->json($r, $r->code);
         }
     }

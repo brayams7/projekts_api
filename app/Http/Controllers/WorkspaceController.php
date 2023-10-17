@@ -487,7 +487,7 @@ class WorkspaceController extends Controller
     }
 
 
-    public function update(StoreWorkspaceRequest $request, int $workspaceId): JsonResponse
+    public function update(StoreWorkspaceRequest $request, $workspaceId): JsonResponse
     {
 
         try {

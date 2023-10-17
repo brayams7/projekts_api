@@ -51,4 +51,8 @@ class Feature extends Model
     public function attachments():BelongsToMany{
         return $this->belongsToMany(Attachment::class, 'feature_attachment');
     }
+
+    public function tasks():HasMany{
+        return $this->hasMany(Task::class);
+    }
 }

@@ -10,6 +10,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use \App\Http\Controllers\FeatureController;
 use \App\Http\Controllers\AttachmentController;
+use \App\Http\Controllers\TaskController;
+use \App\Http\Controllers\TagController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -102,12 +104,29 @@ Route::controller(FeatureController::class)->group(function (){
 
 });
 
+//Tasks
+
+Route::controller(TaskController::class)->group(function (){
+    Route::post('/createTask', 'createTask')->middleware('authorization');
+    Route::get('/listTasks/{featureId}', 'listTaskOfFeature')->middleware('authorization');
+    Route::put('/updateTask/{taskId}', 'updateTask')->middleware('authorization');
+    Route::post('/changeAfterOrBeforeTask', 'changeAfterOrBeforeTask')->middleware('authorization');
+});
 
 //Attachment
 
 Route::controller(AttachmentController::class)->group(function (){
     Route::post('/attachment', 'createAttachment')->middleware('authorization');
     Route::get('/downloadAttachment/{attachmentId}', 'downloadAttachment')->middleware('authorization');
+});
+
+//tags
+
+Route::controller(TagController::class)->group(function (){
+    Route::post('/createTag', 'createTag')->middleware('authorization');
+    Route::get('/listTags', 'listTags')->middleware('authorization');
+    Route::put('/updateTag/{tagId}', 'updateTag')->middleware('authorization');
+    Route::delete('/deleteTag/{tagId}', 'deleteTag')->middleware('authorization');
 });
 
 
