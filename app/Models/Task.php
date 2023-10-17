@@ -34,4 +34,9 @@ class Task extends Model
     public function tags():BelongsToMany{
         return $this->belongsToMany(Tag::class, 'task_tag');
     }
+
+    public function members():BelongsToMany{
+        return $this->belongsToMany(User::class, 'task_user')
+            ->withPivot('is_watcher');
+    }
 }
