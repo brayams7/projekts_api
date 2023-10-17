@@ -87,6 +87,11 @@ class User extends Authenticatable implements JWTSubject
             ->withPivot('is_watcher');
     }
 
+    public function assignedTasks(){
+        return $this->belongsToMany(Task::class, 'task_user')
+            ->withPivot('is_watcher');
+    }
+
 
     public function isGranted($roleName){
 
