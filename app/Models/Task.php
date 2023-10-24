@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use \Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Task extends Model
 {
@@ -38,5 +39,13 @@ class Task extends Model
     public function members():BelongsToMany{
         return $this->belongsToMany(User::class, 'task_user')
             ->withPivot('is_watcher');
+    }
+
+    public function children():HasMany{
+        return $this->hasMany(Task::class,'task_id');
+    }
+
+    public function parent():BelongsTo{
+        return $this->belongsTo(Task::class);
     }
 }

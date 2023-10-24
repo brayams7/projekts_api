@@ -102,6 +102,16 @@ class TaskController extends Controller
         try {
             $this->authorize("create",Task::class);
 
+            /*$tasks = Task::where('feature_id', $featureId)->get();
+
+
+
+            //$children = [];
+            foreach ($tasks as $task){
+
+                $task->children = $task->children()->get();
+            }*/
+
             $feature = Feature::where('id',$featureId)
                 ->with([
                     'tasks'=> function ($query) {
