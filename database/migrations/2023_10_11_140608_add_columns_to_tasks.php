@@ -18,7 +18,7 @@ return new class extends Migration
             $table->uuid('task_before')->nullable()->default(null);
             $table->uuid('task_after')->nullable()->default(null);
 
-            $table->foreign("task_id")
+            /*$table->foreign("task_id")
                 ->references('id')
                 ->on('tasks')
                 ->onDelete("no action")
@@ -34,7 +34,7 @@ return new class extends Migration
                 ->references('id')
                 ->on('tasks')
                 ->onDelete("no action")
-                ->onUpdate("no action");
+                ->onUpdate("no action");*/
         });
     }
 
