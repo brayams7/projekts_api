@@ -116,8 +116,8 @@ Route::controller(TaskController::class)->group(function (){
 //Attachment
 
 Route::controller(AttachmentController::class)->group(function (){
-    Route::post('/attachment', 'createAttachment')->middleware('authorization');
     Route::get('/downloadAttachment/{attachmentId}', 'downloadAttachment')->middleware('authorization');
+    Route::get('/downloadAttachmentInAWS/{attachmentId}', 'downloadAttachmentInAWS')->middleware('authorization');
 });
 
 //tags
