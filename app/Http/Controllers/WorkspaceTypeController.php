@@ -57,7 +57,6 @@ class WorkspaceTypeController extends Controller
                 $workspaceType = WorkspaceType::create([
                 'name'=>$request->name,
             ]);
-
                 $r = CustomResponse::ok($workspaceType);
                 
                 return response()->json($r, $r->code);
@@ -88,13 +87,33 @@ class WorkspaceTypeController extends Controller
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\WorkspaceType  $workspaceType
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\Response    
+     * app
      */
-    public function update(Request $request, WorkspaceType $workspaceType)
+    public function updateWorkspaceType(Request $request,$workspaceTypeId)
     {
-        //
-    }
+        try{
+        $workspaceType = WorkspaceType::where('id',$workspaceTypeId)
+                        ->first();
+        if($workspaceType){
+                        $workspaceType->name = $request->name;
+                        $workspaceType->save();
+                        $r=CustomResponse::ok($workspaceType);
+                        return response()->json($r);
+        }else{
+            $r = CustomResponse::notFound("El Espacio de trabajo no fue encontrado");
+            return response()->json($r);
+        }
+        }catch (AuthorizationException $e){
+                        $r = CustomResponse::forbidden("No autorizado");
+                        return response()->json($r, $r->code);  
+        }catch (Exception $e) {
+                        $r = CustomResponse::badRequest("Ocurrió un error en el servidor");
+                        return response()->json($r, $r->code);
+        }
+    }   
+        
+    
 
     /**
      * Remove the specified resource from storage.
@@ -102,8 +121,26 @@ class WorkspaceTypeController extends Controller
      * @param  \App\Models\WorkspaceType  $workspaceType
      * @return \Illuminate\Http\Response
      */
-    public function destroy(WorkspaceType $workspaceType)
+    public function deleteWorkspaceType(Request $request,$workspaceTypeId)
     {
-        //
+        try {
+            $this->authorize("update",WorkspaceType::class);
+
+            $workspaceType= WorkspaceType::where('id',$workspaceTypeId)->first();
+
+            if(!$workspaceType){
+                $r = CustomResponse::notFound("La Espacio de trabajo no exite");
+                return response()->json($r, $r->code);
+            }
+            $workspaceType->delete();
+            $r = CustomResponse::ok("OK");
+            return response()->json($r);
+        }catch (AuthorizationException $e){
+            $r = CustomResponse::forbidden("No autorizado");
+            return response()->json($r, $r->code);
+        }catch (\Exception $e) {
+            $r = CustomResponse::intertalServerError("Ocurrió un error en el servidor");
+            return response()->json($r, $r->code);
+        }
     }
 }
