@@ -42,5 +42,9 @@ class CustomResponse {
         $instance = new CustomResponse($msg, 500, "INTERNAL_SERVER_ERROR");
         return $instance;
     }
+    public static function notFound($msg = null){
+        $instance = new CustomResponse($msg, 404, "NOTFOUND");
+        return $instance;
+    }
 
 }

@@ -53,9 +53,9 @@ class WorkspaceTypePolicy
      * @param  \App\Models\WorkspaceType  $workspaceType
      * @return \Illuminate\Auth\Access\Response|bool
      */
-    public function update(User $user, WorkspaceType $workspaceType)
+    public function update(User $user)
     {
-        //
+        return $user ->isGranted(Constants::ROLE_TYPE_ADMIN);
     }
 
     /**
@@ -65,9 +65,9 @@ class WorkspaceTypePolicy
      * @param  \App\Models\WorkspaceType  $workspaceType
      * @return \Illuminate\Auth\Access\Response|bool
      */
-    public function delete(User $user, WorkspaceType $workspaceType)
+    public function delete(User $user)
     {
-        //
+        return $user ->isGranted(Constants::ROLE_TYPE_ADMIN);
     }
 
     /**
@@ -79,7 +79,7 @@ class WorkspaceTypePolicy
      */
     public function restore(User $user, WorkspaceType $workspaceType)
     {
-        //
+        //return $user ->isGranted(Constants::ROLE_TYPE_ADMIN);
     }
 
     /**
@@ -91,6 +91,6 @@ class WorkspaceTypePolicy
      */
     public function forceDelete(User $user, WorkspaceType $workspaceType)
     {
-        //
+        //return $user ->isGranted(Constants::ROLE_TYPE_ADMIN);
     }
 }
