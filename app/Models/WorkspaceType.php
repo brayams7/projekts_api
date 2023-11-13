@@ -16,7 +16,7 @@ class WorkspaceType extends Model
      * @var string
      */
     protected $table = 'workspace_type';
-
+    public $timestamps = false;
     /**
      * The attributes that are mass assignable.
      *

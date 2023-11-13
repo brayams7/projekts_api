@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\WorkspaceTypeRequest;
 use App\Models\CustomResponse;
+use App\Models\Workspace;
 use App\Models\WorkspaceType;
 use Exception;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -15,14 +18,30 @@ class WorkspaceTypeController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function listWorkspaceTypes()
     {
-        $list = WorkspaceType::all();
-        $r = CustomResponse::ok([
-            'data'=>$list,
-        ]);
+        try{
+            $this->authorize("viewAny",WorkspaceType::class);
 
-        return response()->json($r, $r->code);
+            $list = WorkspaceType::all();
+            $r = CustomResponse::ok($list);
+            
+            
+            return response()->json($r, $r->code);
+        }catch(AuthorizationException $e)
+        {
+            $r = CustomResponse::forbidden("No Autorizado");
+            return response()->json($r,$r->code);
+        }catch(Exception $e){
+            $r = CustomResponse::badRequest("Ocurrio un error en el servidor");
+            return response()->json($r.$r->code);
+        }
+        // $list = WorkspaceType::all();
+        // $r = CustomResponse::ok([
+        //   'data'=>$list,
+        // ]);
+
+        // return response()->json($r, $r->code);
     }
 
     /**
@@ -31,38 +50,24 @@ class WorkspaceTypeController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function createWorkspaceType(WorkspaceTypeRequest $request)
     {
-        $validator = Validator::make($request->all(),[
-            'name' => ['required','max:128'],
-            'password' => ['required','min:6'],
-            
-        ],[
-            'required' => 'El Campo es requerido',
-            'min'=>'La contraseña debe tener al menos 6 caractéres',
-        ]);
-
-        if(!$validator->fails()){
-            $r = CustomResponse::ok([
-                'data'=>$validator->messages(),
-            ]);
-    
-            return response()->json($r, $r->code);
-        }
-
         try {
-
-            $workspaceType = WorkspaceType::create([
+                $this->authorize("create",WorkspaceType::class);
+                $workspaceType = WorkspaceType::create([
                 'name'=>$request->name,
             ]);
 
-            $r = CustomResponse::ok([
-                'data'=>$workspaceType,
-            ]);
-    
-            return response()->json($r, $r->code);
+                $r = CustomResponse::ok($workspaceType);
+                
+                return response()->json($r, $r->code);
 
+        }catch(AuthorizationException $e)
+        {
+            $r = CustomResponse::forbidden("No Autorizado");
+            return response()->json($r,$r->code);
         } catch (Exception $e) {
+            echo $e;
             $r = CustomResponse::intertalServerError("Ocurrió un error en el servidor");
             return response()->json($r, $r->code);
         }

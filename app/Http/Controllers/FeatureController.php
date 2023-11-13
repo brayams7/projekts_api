@@ -219,7 +219,7 @@ class FeatureController extends Controller
 
             $attachmentController = new AttachmentController();
 
-            $attachment = $attachmentController->create($file);
+            $attachment = $attachmentController->createToAWS($file);
 
             if(!$attachment){
                 $r = CustomResponse::badRequest("Ocurrio un error en el servidor");

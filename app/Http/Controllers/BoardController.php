@@ -159,18 +159,17 @@ class BoardController extends Controller
                 return response()->json($r, $r->code);
             }
 
-            /*if($request->hasFile("bg_image")){
-                $file = $request->file("bg_image");
-                $bgImageName = Str::random(32) . "." . $file->getClientOriginalExtension();
-                $mime = $file->getClientMimeType();
-                $r = CustomResponse::ok($mime);
-                return response()->json($bgImageName);
-            }*/
+            $fileImage = $request->bg_image ? $request->bg_image : "";
+            $bgColor = $request->bg_color ? $request->bg_color : "";
+            $url = '';
 
-            $bgImageName = $request->bg_image ? Str::random(32) . "." . $request->bg_image->getClientOriginalExtension() : "";
-            $bgColor = $request->bg_color ? $request->bg_color : Constants::DEFAULT_COLOR;
-            if ($bgImageName) {
-                Storage::disk(Constants::NAME_STORAGE)->put($bgImageName, file_get_contents($request->bg_image));
+
+            if ($fileImage) {
+                $bgImageName = Constants::NAME_THEMES_BOARD . time() . "." . $fileImage->getClientOriginalExtension();
+
+                $url = env('URL_BASE_BUCKET') . $bgImageName;
+
+                Storage::disk(Constants::NAME_STORAGE_CLOUD)->put($bgImageName, file_get_contents($fileImage), 'public');
             }
 
             $isDefaultStages = (int) $request->have_default_stages;
@@ -181,7 +180,7 @@ class BoardController extends Controller
                 'name' => $request->name,
                 'description' => $request->description,
                 'bg_color' => $bgColor,
-                'bg_img' => $bgImageName,
+                'bg_img' => $url,
                 'user_id' => $user->id,
                 'workspace_id' => $workspace->id,
                 'status' => $this->status

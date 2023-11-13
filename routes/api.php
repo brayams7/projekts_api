@@ -40,8 +40,8 @@ Route::controller(UserController::class)->group(function () {
 
 //Workpaces types
 Route::controller(WorkspaceTypeController::class)->group(function(){
-    Route::get('/workpaces_types', 'index')->middleware('authorization');
-    Route::post('/workpaces_types', 'store')->middleware('authorization');
+    Route::get('/workpaces_types', 'listWorkspaceTypes')->middleware('authorization');
+    Route::post('/workpaces_types', 'createWorkspaceType')->middleware('authorization');
 });
 
 //Workpaces
@@ -116,8 +116,8 @@ Route::controller(TaskController::class)->group(function (){
 //Attachment
 
 Route::controller(AttachmentController::class)->group(function (){
-    Route::post('/attachment', 'createAttachment')->middleware('authorization');
     Route::get('/downloadAttachment/{attachmentId}', 'downloadAttachment')->middleware('authorization');
+    Route::get('/downloadAttachmentInAWS/{attachmentId}', 'downloadAttachmentInAWS')->middleware('authorization');
 });
 
 //tags
