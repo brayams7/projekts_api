@@ -12,6 +12,9 @@ use \App\Http\Controllers\FeatureController;
 use \App\Http\Controllers\AttachmentController;
 use \App\Http\Controllers\TaskController;
 use \App\Http\Controllers\TagController;
+use \App\Http\Controllers\PermissionController;
+use App\Http\Controllers\RoleController;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -131,7 +134,22 @@ Route::controller(TagController::class)->group(function (){
     Route::delete('/deleteTag/{tagId}', 'deleteTag')->middleware('authorization');
 });
 
+//permission
 
+Route::controller(PermissionController::class)->group(function(){
+    Route::post('/createPermission', 'createPermission')->middleware('authorization');
+    Route::get('/listPermission','listPermission')->middleware('authorization');
+    Route::put('/updatePermission/{PermissionId}', 'updatePermission')->middleware('authorization');
+    Route::delete('/deletePermission/{PermissionId}','deletePermission')->middleware('authorization');
+});
+
+//role
+
+Route::controller(RoleController::class)->group(function(){
+    Route::get('/listRole','listRole')->middleware('authorization');
+    Route::delete('/deleteRole/{RoleId}','deleteRole')->middleware('authorization');
+    Route::put('/updateRole/{RoleId}','updateRole')->middleware('authorization');
+});
 // Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 //     return $request->user();
 // });
