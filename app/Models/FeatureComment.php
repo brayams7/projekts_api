@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class FeatureComment extends Model
 {
@@ -19,14 +21,18 @@ class FeatureComment extends Model
     ];
 
     protected $hidden = [
-
     ];
 
-    public function feature(){
+    public function feature(): BelongsTo
+    {
         return $this->belongsTo(Feature::class, 'feature_id', );
     }
 
-    public function user(){
+    public function user():BelongsTo{
         return $this->belongsTo(User::class, 'user_id', );
+    }
+
+    public function attachments():BelongsToMany{
+        return $this->belongsToMany(Attachment::class,'feature_comment_attachment');
     }
 }

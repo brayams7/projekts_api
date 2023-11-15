@@ -42,6 +42,8 @@ Route::controller(UserController::class)->group(function () {
 Route::controller(WorkspaceTypeController::class)->group(function(){
     Route::get('/workpaces_types', 'listWorkspaceTypes')->middleware('authorization');
     Route::post('/workpaces_types', 'createWorkspaceType')->middleware('authorization');
+    Route::put('/workpaces_types/{workspaceTypeId}', 'updateWorkspaceType')->middleware('authorization');
+    Route::delete('/workpaces_types/{workspaceTypeId}','deleteWorkspaceType')->middleware('authorization');
 });
 
 //Workpaces
@@ -108,9 +110,12 @@ Route::controller(FeatureController::class)->group(function (){
 
 Route::controller(TaskController::class)->group(function (){
     Route::post('/createTask', 'createTask')->middleware('authorization');
-    Route::get('/listTasks/{featureId}', 'listTaskOfFeature')->middleware('authorization');
+    Route::post('/addChildTask/{taskId}', 'addChildTask')->middleware('authorization');
+    Route::get('/listTaskOfFeature/{featureId}', 'listTaskOfFeature')->middleware('authorization');
+    Route::get('/listChildrenTask/{taskId}', 'listChildrenTask')->middleware('authorization');
     Route::put('/updateTask/{taskId}', 'updateTask')->middleware('authorization');
     Route::post('/changeAfterOrBeforeTask', 'changeAfterOrBeforeTask')->middleware('authorization');
+    //Route::post('/assignTaskToUserTest', 'assignTaskToUserTest')->middleware('authorization');
 });
 
 //Attachment

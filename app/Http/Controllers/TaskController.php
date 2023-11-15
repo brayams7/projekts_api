@@ -36,8 +36,10 @@ class TaskController extends Controller
             $createdAt = strtotime('now');
             $tags = $request->tags_id;
 
-            $startAt = $request->starts_at ? Carbon::createFromTimestamp($request->starts_at)->toDateTimeString() : null;
-            $dueDate = $request->due_date ? Carbon::createFromTimestamp($request->due_date)->toDateTimeString() : null;
+            $usersToAssign = $request->usersAssign;
+
+            $startAt = $request->starts_at ? Carbon::createFromTimestamp($request->starts_at)->timestamp : null;
+            $dueDate = $request->due_date ? Carbon::createFromTimestamp($request->due_date)->timestamp : null;
 
             if(($startAt && $dueDate) && ($dueDate < $startAt)){
                 $r = CustomResponse::badRequest("La fecha de expiración debe ser mayor a la fecha de inicio.");
@@ -60,9 +62,7 @@ class TaskController extends Controller
             ]);
 
             if ($beforeTask) {
-                //$uuid = Uuid::fromString($task->id);
-
-                self::assignAfterTask($beforeTask,$task->id);
+                $this->assignAfterTask($beforeTask,$task->id);
             }
 
             if (!empty($tags)) {
@@ -75,7 +75,23 @@ class TaskController extends Controller
                     return $tag->id;
                 });
 
-                self::assignTagsToFeature($task, $uuidsTags);
+                $isMembersAssigned = $this->assignTagsToFeature($task, $uuidsTags);
+
+                if(!$isMembersAssigned){
+                    DB::rollBack();
+                    $r = CustomResponse::intertalServerError("Ocurrió un error en el servidor");
+                    return response()->json($r, $r->code);
+                }
+            }
+
+            if(!empty($usersToAssign)){
+                $isMembersAssigned = $this->assignTaskToUsers($task, $usersToAssign);
+
+                if(!$isMembersAssigned){
+                    DB::rollBack();
+                    $r = CustomResponse::intertalServerError("Ocurrió un error en el servidor");
+                    return response()->json($r, $r->code);
+                }
             }
 
             DB::commit();
@@ -84,6 +100,45 @@ class TaskController extends Controller
 
 
             $r = CustomResponse::ok($task);
+            return response()->json($r);
+
+        }catch (AuthorizationException $e){
+
+            $r = CustomResponse::forbidden("No autorizado");
+            return response()->json($r, $r->code);
+
+        }catch (\Exception $e) {
+            DB::rollBack();
+            echo $e;
+            $r = CustomResponse::intertalServerError("Ocurrió un error en el servidor");
+            return response()->json($r, $r->code);
+        }
+    }
+
+    public function addChildTask(Request $request, $taskId):JsonResponse{
+        try {
+            $this->authorize("create",Task::class);
+
+            $taskIdParent = $request->task_parent_id;
+
+            $taskChild = Task::where('id',$taskId)->first();
+
+            $taskParent = Task::where('id',$taskIdParent)->first();
+
+            if(!$taskChild || !$taskParent){
+                $r = CustomResponse::badRequest("Error en las credenciales");
+                return response()->json($r, $r->code);
+            }
+
+            if($taskParent->id === $taskChild->id){
+                $r = CustomResponse::badRequest("Un tarea no puede tener una subtarea con el mismo id");
+                return response()->json($r, $r->code);
+            }
+
+            $taskChild->task_id =  $taskParent->id;
+            $taskChild->save();
+
+            $r = CustomResponse::ok("OK");
             return response()->json($r);
 
         }catch (AuthorizationException $e){
@@ -102,22 +157,15 @@ class TaskController extends Controller
         try {
             $this->authorize("create",Task::class);
 
-            /*$tasks = Task::where('feature_id', $featureId)->get();
-
-
-
-            //$children = [];
-            foreach ($tasks as $task){
-
-                $task->children = $task->children()->get();
-            }*/
-
             $feature = Feature::where('id',$featureId)
                 ->with([
                     'tasks'=> function ($query) {
                         $query->orderBy('created_at','asc')
                             ->with([
                                 'tags'
+                            ])
+                            ->with([
+                                'assignedUsers'
                             ]);
                     }
                 ])->first();
@@ -127,9 +175,47 @@ class TaskController extends Controller
                 return response()->json($r, $r->code);
             }
 
-            $tasks= $feature->tasks;
+
+            $tasks = $feature->tasks;
+
+            foreach ($tasks as $task){
+                $task->count_children = $task->children()->get()->count();
+            }
+
+            $tasks = array_values(collect($tasks)->filter( function ($task){
+                return !isset($task->parent) || !$task->parent;
+            })->toArray());
 
             $r = CustomResponse::ok($tasks);
+            return response()->json($r);
+
+        }catch (AuthorizationException $e){
+
+            $r = CustomResponse::forbidden("No autorizado");
+            return response()->json($r, $r->code);
+
+        }catch (\Exception $e) {
+            $r = CustomResponse::intertalServerError("Ocurrió un error en el servidor");
+            return response()->json($r, $r->code);
+        }
+    }
+
+    public function listChildrenTask(Request $request, $taskParentId):JsonResponse{
+        try {
+            $this->authorize("create",Task::class);
+
+            $tasks = Task::with(
+                [
+                    'subTasks',
+                    'tags',
+                    'assignedUsers'
+                ]
+            )
+                ->where('task_id', $taskParentId)
+                ->get();
+            $listTasks = $this->getCountChildren($tasks);
+
+            $r = CustomResponse::ok($listTasks);
             return response()->json($r);
 
         }catch (AuthorizationException $e){
@@ -258,10 +344,76 @@ class TaskController extends Controller
             return response()->json($r, $r->code);
 
         }catch (\Exception $e) {
-            echo $e;
             DB::rollBack();
             $r = CustomResponse::intertalServerError("Ocurrió un error en el servidor");
             return response()->json($r, $r->code);
+        }
+    }
+
+    public function assignTaskToUserTest(Request $request):JsonResponse{
+        try {
+            $this->authorize("create",Task::class);
+
+            $task = Task::where('id', '9a78a130-d6f7-4882-b1e3-82eecc615ad1')->first();
+
+            $listUsers = $request->users;
+            $isMembersAssigned = $this->assignTaskToUsers($task, $listUsers);
+
+            $r = CustomResponse::ok($isMembersAssigned);
+            return response()->json($r);
+
+        }catch (AuthorizationException $e){
+
+            $r = CustomResponse::forbidden("No autorizado");
+            return response()->json($r, $r->code);
+
+        }catch (\Exception $e) {
+            $r = CustomResponse::intertalServerError("Ocurrió un error en el servidor");
+            return response()->json($r, $r->code);
+        }
+    }
+
+    protected function assignTaskToUsers(Task $task, mixed $listUsers):bool{
+        $band = true;
+        //get users assigned to the task
+
+        $users =  $this->listOfUsersAssignedToTheTask($task);
+
+        try {
+            foreach ($listUsers as $assignment) {
+
+                $userId = $assignment['id'];
+                $isWatcher = $assignment['is_watcher'];
+
+                $isUserAssignment = $users->first(function ($assignment) use ($userId){
+                    return $assignment->id === $userId;
+                });
+
+                if(!$isUserAssignment){
+                    $pivotAttributes = ['is_watcher'=>$isWatcher];
+                    $task->assignedUsers()->attach($userId, $pivotAttributes);
+                }
+
+            }
+
+        } catch (\Exception $exception) {
+            //echo $exception;
+            $band =  false;
+        }
+        return $band;
+    }
+
+    protected function listOfUsersAssignedToTheTask(Task $task){
+        try {
+            return $task->assignedUsers()->get()
+                ->map(function ($assignment){
+                    $isWatcher = $assignment->pivot->is_watcher;
+                    $assignment->is_watcher = $isWatcher;
+                    unset($assignment->pivot);
+                    return $assignment;
+                });
+        }catch (\Exception $e){
+            return [];
         }
     }
 
@@ -275,7 +427,7 @@ class TaskController extends Controller
         return $task->save();
     }
 
-    protected function assignTagsToFeature(Task $task, array $uuidsTags):bool{
+    protected function assignTagsToFeature(Task $task, $uuidsTags):bool{
         $band = true;
 
         $listMapUuids = collect($uuidsTags)->filter(function ($item){
@@ -291,5 +443,18 @@ class TaskController extends Controller
         }
 
         return $band;
+    }
+
+    private function getCountChildren($listTasks){
+
+        foreach ($listTasks as $task){
+
+            if(count($task->subTasks) > 0){
+                $this->getCountChildren($task->subTasks);
+            }
+            $task->count_children = $task->children()->count();
+        }
+
+        return $listTasks;
     }
 }
