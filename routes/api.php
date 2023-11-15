@@ -40,8 +40,10 @@ Route::controller(UserController::class)->group(function () {
 
 //Workpaces types
 Route::controller(WorkspaceTypeController::class)->group(function(){
-    Route::get('/workpaces_types', 'index')->middleware('authorization');
-    Route::post('/workpaces_types', 'store')->middleware('authorization');
+    Route::get('/workpaces_types', 'listWorkspaceTypes')->middleware('authorization');
+    Route::post('/workpaces_types', 'createWorkspaceType')->middleware('authorization');
+    Route::put('/workpaces_types/{workspaceTypeId}', 'updateWorkspaceType')->middleware('authorization');
+    Route::delete('/workpaces_types/{workspaceTypeId}','deleteWorkspaceType')->middleware('authorization');
 });
 
 //Workpaces

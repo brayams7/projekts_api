@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class WorkspaceType extends Model
 {
+    
     use HasFactory, HasUuids;
 
     /**
@@ -16,7 +17,7 @@ class WorkspaceType extends Model
      * @var string
      */
     protected $table = 'workspace_type';
-
+    public $timestamps = false;
     /**
      * The attributes that are mass assignable.
      *
