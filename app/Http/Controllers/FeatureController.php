@@ -144,10 +144,12 @@ class FeatureController extends Controller
             }
 
             $comments = FeatureComment::where('feature_id', $feature->id)
-                ->with(['user'])
-                ->orderBy('created_at','desc')
-                ->get();
+                ->with(['user','attachments'])
+                ->orderBy('created_at','asc')
+                ->cursorPaginate(15);
 
+            $comments->hasMorePages();
+            $comments->count();
 
             $r = CustomResponse::ok($comments);
             return response()->json($r);
@@ -171,7 +173,7 @@ class FeatureController extends Controller
             $userId = $request->user_id;
             $featureId = $request->feature_id;
             $comment= ($request->comment || isset($request->comment)) ? $request->comment : "";
-
+            $file = $request->hasFile('file') ? $request->file('file') : null;
 
             $user = User::where('id', $userId)
                 ->where('status', $this->status)
@@ -189,6 +191,21 @@ class FeatureController extends Controller
                 'feature_id'=>$feature->id,
                 'comment'=>$comment
             ]);
+
+            if($file){
+
+                $attachmentController = new AttachmentController();
+
+                $attachment = $attachmentController->createToAWS($file);
+
+                if(!$attachment){
+                    $r = CustomResponse::intertalServerError("No se pudo persistir el archivo adjunto");
+                    return response()->json($r, $r->code);
+                }
+
+                $newComment->attachments()->attach($attachment->id);
+
+            }
 
             $r = CustomResponse::ok($newComment);
             return response()->json($r);
@@ -676,7 +693,7 @@ class FeatureController extends Controller
 
             $listUserAssigned = self::listOfUsersAssignedToTheFunctionality($feature);
             $isExistUser = $listUserAssigned->first(function ($assignment) use ($user){
-                return $assignment->user_id > $user->id;
+                return $assignment->id === $user->id;
             });
 
             if(!$isExistUser) {

@@ -10,14 +10,32 @@ use Exception;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-
+use \Illuminate\Http\JsonResponse;
 class WorkspaceTypeController extends Controller
 {
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return JsonResponse
      */
+<<<<<<< HEAD
+    public function index(): JsonResponse
+    {
+        try {
+
+            $list = WorkspaceType::all();
+
+            $r = CustomResponse::ok([
+                'data'=>$list,
+            ]);
+
+            return response()->json($r);
+
+        }catch (Exception $e){
+            $r = CustomResponse::intertalServerError("Ocurrió un error en el servidor");
+            return response()->json($r, $r->code);
+        }
+=======
     public function listWorkspaceTypes()
     {
         try{
@@ -42,6 +60,7 @@ class WorkspaceTypeController extends Controller
         // ]);
 
         // return response()->json($r, $r->code);
+>>>>>>> 8d90f02d9dc3825e482122b99eee4447ea2cdd8b
     }
 
     /**

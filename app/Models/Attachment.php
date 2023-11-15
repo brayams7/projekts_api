@@ -22,6 +22,10 @@ class Attachment extends Model
         'attachment_type_id'
     ];
 
+    protected $hidden = [
+        'pivot'
+    ];
+
     public function attachmentType(): BelongsTo
     {
         return $this->belongsTo(AttachmentType::class);
@@ -30,5 +34,9 @@ class Attachment extends Model
     public function features(): BelongsToMany
     {
         return $this->belongsToMany(Feature::class,'feature_attachment');
+    }
+
+    public function featureComments():BelongsToMany{
+        return $this->belongsToMany(FeatureComment::class, 'feature_comment_attachment');
     }
 }
