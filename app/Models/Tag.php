@@ -14,7 +14,11 @@ class Tag extends Model
 
     protected $fillable = [
         'tag',
-        'color'
+        'color',
+    ];
+
+    public $hidden = [
+        'pivot'
     ];
 
     public function tasks():BelongsToMany{

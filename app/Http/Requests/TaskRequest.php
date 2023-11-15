@@ -32,7 +32,8 @@ class TaskRequest extends FormRequest
             'calculated_time' => 'integer',
             'starts_at' => 'integer',
             'feature_id' => 'uuid',
-            'tags_id'=>'array'
+            'tags_id'=>'array',
+            'usersAssign'=>'array|required'
         ];
     }
 

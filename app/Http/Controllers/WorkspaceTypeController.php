@@ -7,22 +7,30 @@ use App\Models\WorkspaceType;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-
+use \Illuminate\Http\JsonResponse;
 class WorkspaceTypeController extends Controller
 {
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return JsonResponse
      */
-    public function index()
+    public function index(): JsonResponse
     {
-        $list = WorkspaceType::all();
-        $r = CustomResponse::ok([
-            'data'=>$list,
-        ]);
+        try {
 
-        return response()->json($r, $r->code);
+            $list = WorkspaceType::all();
+
+            $r = CustomResponse::ok([
+                'data'=>$list,
+            ]);
+
+            return response()->json($r);
+
+        }catch (Exception $e){
+            $r = CustomResponse::intertalServerError("Ocurrió un error en el servidor");
+            return response()->json($r, $r->code);
+        }
     }
 
     /**
