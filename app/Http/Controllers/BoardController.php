@@ -16,7 +16,6 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
-use App\Constants\AppConstants;
 use App\Constants\Constants;
 use Illuminate\Support\Facades\Storage;
 
@@ -25,28 +24,11 @@ class BoardController extends Controller
 
     protected int $status = 1;
 
-    /**
-     * Display a listing of the resource.
-     *
-     * @return JsonResponse
-     */
-    public function index()
-    {
-        $listBoards = Board::where('status', 1)
-            ->orderByRaw('updated_at - created_at DESC')
-            ->get();
-
-        foreach ($listBoards as $board) {
-            $board->workspace;
-        }
-
-        $r = CustomResponse::ok($listBoards);
-        return response()->json($r);
-    }
 
     /**
      * Display a listing of the resource.
-     * @param  int  $idWorkspace
+     * @param Request $request
+     * @param $workspaceId
      * @return JsonResponse
      */
     public function getBoardsByWorkspace(Request $request, $workspaceId): JsonResponse
@@ -386,14 +368,4 @@ class BoardController extends Controller
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return Response
-     */
-    public function destroy($id)
-    {
-        //
-    }
 }
