@@ -145,7 +145,7 @@ class FeatureController extends Controller
 
             $comments = FeatureComment::where('feature_id', $feature->id)
                 ->with(['user','attachments'])
-                ->orderBy('created_at','asc')
+                ->orderBy('created_at','desc')
                 ->cursorPaginate(15);
 
             $comments->hasMorePages();
@@ -270,7 +270,7 @@ class FeatureController extends Controller
 
             $feature = Feature::where('id',$featureId)
                 ->with(['attachments'=>function ($query){
-                    $query->orderBy('attachments.created_at','desc')
+                    $query->orderBy('attachments.created_at','asc')
                         ->with(['attachmentType']);
                 }])
                 ->first();
