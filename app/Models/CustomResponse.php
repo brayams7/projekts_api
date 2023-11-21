@@ -46,5 +46,10 @@ class CustomResponse {
         $instance = new CustomResponse($msg, 404, "NOTFOUND");
         return $instance;
     }
+    public static function unprocessableEntity($message=null)
+    {
+        $instance = new CustomResponse('unprocessable_entity', 422, $message);
+        return $instance;
+    }
 
 }
