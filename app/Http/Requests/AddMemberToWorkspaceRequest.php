@@ -27,7 +27,7 @@ class AddMemberToWorkspaceRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'username' => 'string',
+            'username' => 'min:0',
             'email' => 'string|email|required',
             'token' => 'string',
         ];

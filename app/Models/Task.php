@@ -36,7 +36,7 @@ class Task extends Model
         return $this->belongsToMany(Tag::class, 'task_tag');
     }
 
-    public function members():BelongsToMany{
+    public function assignedUsers():BelongsToMany{
         return $this->belongsToMany(User::class, 'task_user')
             ->withPivot('is_watcher');
     }
@@ -46,6 +46,10 @@ class Task extends Model
     }
 
     public function parent():BelongsTo{
-        return $this->belongsTo(Task::class);
+        return $this->belongsTo(Task::class,'task_id');
+    }
+
+    public function subTasks():HasMany{
+        return $this->children()->with(['subTasks']);
     }
 }
