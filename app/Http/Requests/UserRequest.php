@@ -15,7 +15,7 @@ class UserRequest extends FormRequest
      *
      * @return bool
      */
-    public function authorize()
+    public function authorize(): bool
     {
         return true;
     }
@@ -25,40 +25,35 @@ class UserRequest extends FormRequest
      *
      * @return array<string, mixed>
      */
-// ...
+    public function rules(): array{
 
-public function rules()
-{
-    //$id = $this->route('id');
+        return [
+            // 'username' => [
+            //     'string',
+            //     Rule::unique('users', 'username')->ignore($id),
+            // ],
+            // 'name' => 'string',
+            // 'picture_url' => [
+            //     'sometimes',
+            //     'image',
+            //     Rule::dimensions()->maxWidth(1000)->maxHeight(1000),
+            // ],
+            // 'email' => [
+            //     'email',
+            //     Rule::unique('users', 'email')->ignore($id),
+            // ],
+        ];
+    }
 
-    return [
-        // 'username' => [
-        //     'string',
-        //     Rule::unique('users', 'username')->ignore($id),
-        // ],
-        // 'name' => 'string',
-        // 'picture_url' => [
-        //     'sometimes',
-        //     'image',
-        //     Rule::dimensions()->maxWidth(1000)->maxHeight(1000),
-        // ],
-        // 'email' => [
-        //     'email',
-        //     Rule::unique('users', 'email')->ignore($id),
-        // ],
-    ];
-
-}
-
-public function messages()
-{
-    return [
-        'username.unique' => 'El nombre de usuario ya está en uso.',
-        'picture_url.image' => 'El campo :attribute debe ser una imagen válida.',
-        'picture_url.dimensions' => 'La imagen no debe superar los 1000x1000 píxeles.',
-        'email.unique' => 'El correo electrónico ya está en uso.',
-    ];
-}
+    public function messages(): array
+    {
+        return [
+            'username.unique' => 'El nombre de usuario ya está en uso.',
+            'picture_url.image' => 'El campo :attribute debe ser una imagen válida.',
+            'picture_url.dimensions' => 'La imagen no debe superar los 1000x1000 píxeles.',
+            'email.unique' => 'El correo electrónico ya está en uso.',
+        ];
+    }
 
 
 

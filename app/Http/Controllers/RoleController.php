@@ -3,21 +3,20 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Support\Facades\Validator;
 use Exception;
 use Illuminate\Http\Request;
-use App\Http\Requests\PermissionRequest;
 use App\Models\CustomResponse;
 use App\Models\Role;
+use \Illuminate\Http\JsonResponse;
 
 class RoleController extends Controller
 {
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return JsonResponse
      */
-    public function listRole()
+    public function listRole(): JsonResponse
     {
         try{
             $this->authorize("viewAny",Role::class);
@@ -35,13 +34,15 @@ class RoleController extends Controller
             $r = CustomResponse::badRequest("Ocurrio un error en el servidor");
             return response()->json($r.$r->code);
         }}
-        /**
+
+    /**
      * Display the specified resource.
      *
-    *@param \app\Models\Permission
-    *@return \Illuminate\Http\Response
+     * @param Request $request
+     * @param $RoleId
+     * @return JsonResponse
      */
-    public function deleteRole(Request $request,$RoleId)
+    public function deleteRole(Request $request,$RoleId): JsonResponse
     {
         try {
             $this->authorize("update",Role::class);
@@ -63,27 +64,30 @@ class RoleController extends Controller
             return response()->json($r, $r->code);
         }
     }
+
     /**
      * Display the specified resource.
      *
-    *@param \app\Models\Permission
-    *@return \Illuminate\Http\Response
+     * @param Request $request
+     * @param $RoleId
+     * @return JsonResponse
      */
-    public function updateRole(Request $request,$RoleId)
+    public function updateRole(Request $request,$RoleId): JsonResponse
     {
         try{
-        $Role = Role::where('id',$RoleId)
+
+        $role = Role::where('id',$RoleId)
                         ->first();
-        if($Role){
-            $Role->name = $request->name;
-            $Role->description = $request->description;
-            $Role->save();
-            $r=CustomResponse::ok($Role);
-            return response()->json($r);
-        }else{
+        if(!$role){
             $r = CustomResponse::notFound("El Permiso no fue encontrado");
             return response()->json($r);
         }
+        $role->name = $request->name;
+        $role->description = $request->description;
+        $role->save();
+        $r=CustomResponse::ok($role);
+        return response()->json($r);
+
         }catch (AuthorizationException $e){
             $r = CustomResponse::forbidden("No autorizado");
             return response()->json($r, $r->code);  
