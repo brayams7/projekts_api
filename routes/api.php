@@ -39,8 +39,8 @@ Route::get('/auth/refresh_token', [AuthController::class, 'refreshToken']);
 Route::controller(UserController::class)->group(function () {
     Route::get('/users', 'index')->middleware('authorization');
     Route::get('/users/searchUsersByEmailOrUsername', 'searchUsersByEmailOrUsername')->middleware('authorization');
-    Route::put('/users/togglestatus/{id}', 'toggleUserStatus')->middleware('authorization');
-    Route::post('/users/updateprofile/{id}', 'updateProfile')->middleware('authorization');
+    Route::put('/users/toggle-status/{id}', 'toggleUserStatus')->middleware('authorization');
+    Route::post('/users/update-profile/{id}', 'updateProfile')->middleware('authorization');
 
 });
 

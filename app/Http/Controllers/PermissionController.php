@@ -7,17 +7,17 @@ use Illuminate\Http\Request;
 use App\Models\CustomResponse;
 use App\Models\Permission;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Support\Facades\Validator;
 use Exception;
+use \Illuminate\Http\JsonResponse;
 
 class PermissionController extends Controller
 {
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return JsonResponse
      */
-    public function listPermission()
+    public function listPermission(): JsonResponse
     {
         try{
             $this->authorize("viewAny",Permission::class);
@@ -35,26 +35,31 @@ class PermissionController extends Controller
             $r = CustomResponse::badRequest("Ocurrio un error en el servidor");
             return response()->json($r.$r->code);
         }}
+
     /**
      * Display the specified resource.
      *
-    *@param \app\Models\Permission
-    *@return \Illuminate\Http\Response
+     * @param Request $request
+     * @param $PermissionId
+     * @return JsonResponse
      */
-    public function deletePermission(Request $request,$PermissionId)
+    public function deletePermission(Request $request, $PermissionId): JsonResponse
     {
         try {
             $this->authorize("update",Permission::class);
 
-            $Permission= Permission::where('id',$PermissionId)->first();
+            $permission= Permission::where('id',$PermissionId)->first();
 
-            if(!$Permission){
+            if(!$permission){
                 $r = CustomResponse::notFound("La Permiso no exite");
                 return response()->json($r, $r->code);
             }
-            $Permission->delete();
+
+            $permission->delete();
+
             $r = CustomResponse::ok("OK");
             return response()->json($r);
+
         }catch (AuthorizationException $e){
             $r = CustomResponse::forbidden("No autorizado");
             return response()->json($r, $r->code);
@@ -63,60 +68,64 @@ class PermissionController extends Controller
             return response()->json($r, $r->code);
         }
     }
+
     /**
      * Display the specified resource.
      *
-    *@param \app\Models\Permission
-    *@return \Illuminate\Http\Response
+     * @param Request $request
+     * @param $PermissionId
+     * @return JsonResponse
      */
-    public function updatePermission(Request $request,$PermissionId)
+    public function updatePermission(Request $request,$PermissionId): JsonResponse
     {
         try{
         $Permission = Permission::where('id',$PermissionId)
                         ->first();
-        if($Permission){
-                        $Permission->name = $request->name;
-                        $Permission->description = $request->description;
-                        $Permission->save();
-                        $r=CustomResponse::ok($Permission);
-                        return response()->json($r);
-        }else{
+        if(!$Permission){
             $r = CustomResponse::notFound("El Permiso no fue encontrado");
             return response()->json($r);
+
         }
+
+        $Permission->name = $request->name;
+        $Permission->description = $request->description;
+        $Permission->save();
+        $r=CustomResponse::ok($Permission);
+        return response()->json($r);
+
         }catch (AuthorizationException $e){
-                        $r = CustomResponse::forbidden("No autorizado");
-                        return response()->json($r, $r->code);  
+            $r = CustomResponse::forbidden("No autorizado");
+            return response()->json($r, $r->code);
         }catch (Exception $e) {
-                        $r = CustomResponse::badRequest("Ocurrió un error en el servidor");
-                        return response()->json($r, $r->code);
+            $r = CustomResponse::badRequest("Ocurrió un error en el servidor");
+            return response()->json($r, $r->code);
         }
     }
+
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @param PermissionRequest $request
+     * @return JsonResponse
      */
-    public function createPermission(PermissionRequest $request)
+    public function createPermission(PermissionRequest $request): JsonResponse
     {
         try {
-                $this->authorize("create",Permission::class);
-                $Permission = Permission::create([
+            $this->authorize("create",Permission::class);
+
+            $Permission = Permission::create([
                 'name'=>$request->name,
                 'description'=>$request->description
             ]);
             $r = CustomResponse::ok($Permission);
-            
-                
-                return response()->json($r, $r->code);
+            return response()->json($r, $r->code);
 
-        }catch(AuthorizationException $e)
-        {
+        }catch(AuthorizationException $e) {
+
             $r = CustomResponse::forbidden("No Autorizado");
             return response()->json($r,$r->code);
+
         } catch (Exception $e) {
-            echo $e;
             $r = CustomResponse::intertalServerError("Ocurrió un error en el servidor");
             return response()->json($r, $r->code);
         }
