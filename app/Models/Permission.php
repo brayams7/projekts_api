@@ -11,10 +11,14 @@ class Permission extends Model
     use HasFactory, HasUuids;
 
     protected $hidden = [
-        'id',
         'pivot',
         'created_at',
         'updated_at'
+    ];
+    protected $fillable = [
+        'id',
+        'name',
+        'description'
     ];
 
     //relation many to many
