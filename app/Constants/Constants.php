@@ -15,6 +15,8 @@ class Constants
 
     const BASE_DIRECTORY = 'storage/';
 
+    const NAME_DIRECTORY_PROFILE= 'profile_pictures/';
+
     // Define más constantes según tus necesidades
 
     //ROLES TYPES
@@ -24,7 +26,7 @@ class Constants
     //LIST PERMISSIONS
 
     const LIST_PERMISSIONS = [
-       'workspace'=>'workspace',
+        'workspace'=>'workspace',
         'board'=>'board',
         'tasks'=>'tasks',
         'dashboard'=>'dashboard',
