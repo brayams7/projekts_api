@@ -144,9 +144,24 @@ class FeatureController extends Controller
             }
 
             $comments = FeatureComment::where('feature_id', $feature->id)
-                ->with(['user','attachments'])
+                ->with(['user','attachments'=>['attachmentType']])
                 ->orderBy('created_at','desc')
                 ->cursorPaginate(15);
+
+            $comments->map(function ($comment){
+                $comment->attachments = $comment->attachments->map(function ($attachment){
+                    $attachment->name = pathinfo(basename($attachment->url),PATHINFO_FILENAME);
+                    return $attachment;
+                });
+            });
+//            $attachments = $comments->attachments;
+//
+//            $mapAttachments = $attachments->map(function ($attachment){
+//                $attachment->feature_id = $attachment->pivot->feature_id;
+//                $attachment->name = pathinfo(basename($attachment->url),PATHINFO_FILENAME);
+//                unset($attachment->pivot);
+//                return $attachment;
+//            });
 
             $comments->hasMorePages();
             $comments->count();
