@@ -29,7 +29,6 @@ class TaskRequest extends FormRequest
         return [
             'title' => 'required|max:256',
             'due_date' => 'integer',
-            'calculated_time' => 'integer',
             'starts_at' => 'integer',
             'feature_id' => 'uuid',
             'tags_id'=>'array',
