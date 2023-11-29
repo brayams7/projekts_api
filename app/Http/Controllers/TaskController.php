@@ -10,6 +10,7 @@ use App\Models\Feature;
 use App\Models\Tag;
 use App\Models\Task;
 use Carbon\Carbon;
+use Carbon\CarbonInterval;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,6 +21,7 @@ use Ramsey\Uuid\Uuid;
 
 class TaskController extends Controller
 {
+
     public function createTask(TaskRequest $request):JsonResponse{
         try {
             $this->authorize("create",Task::class);
@@ -38,10 +40,15 @@ class TaskController extends Controller
 
             $usersToAssign = $request->usersAssign;
 
-            $startAt = $request->starts_at ? Carbon::createFromTimestamp($request->starts_at)->timestamp : null;
-            $dueDate = $request->due_date ? Carbon::createFromTimestamp($request->due_date)->timestamp : null;
+            $startAtTimestamp = $request->starts_at ? Carbon::createFromTimestamp($request->starts_at)->timestamp : null;
+            $dueDateTimestamp = $request->due_date ? Carbon::createFromTimestamp($request->due_date)->timestamp : null;
 
-            if(($startAt && $dueDate) && ($dueDate < $startAt)){
+            $diffInSeconds = $startAtTimestamp && $dueDateTimestamp
+                ? Carbon::createFromTimestamp($dueDateTimestamp)->diffInSeconds(Carbon::createFromTimestamp($startAtTimestamp))
+                : null;
+
+
+            if($dueDateTimestamp < $startAtTimestamp){
                 $r = CustomResponse::badRequest("La fecha de expiración debe ser mayor a la fecha de inicio.");
                 return response()->json($r, $r->code);
             }
@@ -50,15 +57,15 @@ class TaskController extends Controller
 
             DB::beginTransaction();
 
-
             $task = Task::create([
+                'calculated_time'=>$diffInSeconds,
                 'title'=>$title,
                 'feature_id'=>$feature->id,
                 'description'=>$description,
                 'task_before'=>$beforeTask ? $beforeTask->id : $beforeTask,
                 'created_at'=>$createdAt,
-                'starts_at'=>$startAt,
-                'due_date'=>$dueDate
+                'starts_at'=>$startAtTimestamp,
+                'due_date'=>$dueDateTimestamp
             ]);
 
             if ($beforeTask) {
@@ -96,6 +103,11 @@ class TaskController extends Controller
 
             DB::commit();
 
+            $task->count_children = $task->children()->get()->count();
+            $task->tags = $task->tags()->get();
+            foreach ($task->assignedUsers as $assignedUsers){
+                $assignedUsers->is_watcher = $assignedUsers->pivot->is_watcher;
+            }
             //$firstTask = $feature->tasks()->first();
 
 
@@ -109,7 +121,6 @@ class TaskController extends Controller
 
         }catch (\Exception $e) {
             DB::rollBack();
-            echo $e;
             $r = CustomResponse::intertalServerError("Ocurrió un error en el servidor");
             return response()->json($r, $r->code);
         }
@@ -119,7 +130,7 @@ class TaskController extends Controller
         try {
             $this->authorize("create",Task::class);
 
-            $taskIdParent = $request->task_parent_id;
+            $taskIdParent = $request->input('task_parent_id');
 
             $taskChild = Task::where('id',$taskId)->first();
 
@@ -138,7 +149,16 @@ class TaskController extends Controller
             $taskChild->task_id =  $taskParent->id;
             $taskChild->save();
 
-            $r = CustomResponse::ok("OK");
+            $taskParent->count_children = $taskParent->children()->get()->count();
+
+//            foreach ($taskParent->assignedUsers as $assignedUsers){
+//                $assignedUsers->is_watcher = $assignedUsers->pivot->is_watcher;
+//            }
+
+            $r = CustomResponse::ok([
+                'parent'=>$taskParent
+            ]);
+
             return response()->json($r);
 
         }catch (AuthorizationException $e){
@@ -182,9 +202,16 @@ class TaskController extends Controller
                 $task->count_children = $task->children()->get()->count();
             }
 
+            foreach ($tasks as $task){
+                foreach ($task->assignedUsers as $assignedUsers){
+                    $assignedUsers->is_watcher = $assignedUsers->pivot->is_watcher;
+                }
+            }
+
             $tasks = array_values(collect($tasks)->filter( function ($task){
                 return !isset($task->parent) || !$task->parent;
             })->toArray());
+
 
             $r = CustomResponse::ok($tasks);
             return response()->json($r);
@@ -234,19 +261,35 @@ class TaskController extends Controller
         try {
             $this->authorize("update",Task::class);
 
-
             $task = Task::where('id',$taskId)->first();
 
             if(!$task){
                 $r = CustomResponse::badRequest("La terea no existe");
                 return response()->json($r, $r->code);
             }
-            $title = $request->title ? $request->title : $task->title;
-            $dueDate = $request->due_date ? Carbon::createFromTimestamp($request->due_date)->toDateTimeString() : $task->due_date;
-            $calculatedTime = $request->calculated_time ? Carbon::createFromTimestamp($request->calculated_time)->toDateTimeString() : $task->calculated_time;
-            $startsAt = $request->starts_at ? Carbon::createFromTimestamp($request->starts_at)->toDateTimeString() : $task->starts_at;
 
-            $description = $request->description ? trim($request->description) : $task->description;
+            $title = $request->has('title') ? $request->title : $task->title;
+            $description = $request->has('description') ? trim($request->description) : $task->description;
+
+            $usersToAssign = $request->usersAssign;
+            $tags = $request->tags_id;
+
+            $startsAt = $request->has('starts_at') ? Carbon::createFromTimestamp($request->starts_at)->timestamp : $task->starts_at;
+            $dueDate = $request->has('due_date') ? Carbon::createFromTimestamp($request->due_date)->timestamp :  $task->due_date;
+//            $calculatedTime = $request->calculated_time ? Carbon::createFromTimestamp($request->calculated_time)->toDateTimeString() : $task->calculated_time;
+//            $startsAt = $request->has('starts_at') ? Carbon::createFromTimestamp($request->starts_at)->toDateTimeString() : $task->starts_at;
+
+            $calculatedTime = $startsAt && $dueDate
+                ? Carbon::createFromTimestamp($dueDate)->diffInSeconds(Carbon::createFromTimestamp($startsAt))
+                : null;
+
+            if($dueDate < $startsAt){
+                $r = CustomResponse::badRequest("La fecha de expiración debe ser mayor a la fecha de inicio.");
+                return response()->json($r, $r->code);
+            }
+
+            DB::beginTransaction();
+
 
             $task->title=$title;
             $task->description = $description;
@@ -255,6 +298,47 @@ class TaskController extends Controller
             $task->starts_at = $startsAt;
 
             $task->save();
+
+            if (!empty($tags)) {
+                $task->tags()->detach();
+
+                $tag = new Tag;
+                $tags = $tag->getTagsIn($tags);
+
+                $uuidsTags = $tags->map(function ($tag) {
+                    return $tag->id;
+                });
+
+                $isTagsAssigned = $this->assignTagsToFeature($task, $uuidsTags);
+
+                if(!$isTagsAssigned){
+                    DB::rollBack();
+                    $r = CustomResponse::intertalServerError("Ocurrió un error en el servidor 1");
+                    return response()->json($r, $r->code);
+                }
+            }
+
+            if(!empty($usersToAssign)){
+
+                $task->assignedUsers()->detach();
+
+                $isMembersAssigned = $this->assignTaskToUsers($task, $usersToAssign);
+                if(!$isMembersAssigned){
+                    DB::rollBack();
+                    $r = CustomResponse::intertalServerError("Ocurrió un error en el servidor 2");
+                    return response()->json($r, $r->code);
+                }
+            }
+
+            DB::commit();
+
+            $task->count_children = $task->children()->get()->count();
+
+            $task->tags = $task->tags()->get();
+
+            foreach ($task->assignedUsers as $assignedUsers){
+                $assignedUsers->is_watcher = $assignedUsers->pivot->is_watcher;
+            }
 
             $r = CustomResponse::ok($task);
             return response()->json($r);
@@ -265,6 +349,9 @@ class TaskController extends Controller
             return response()->json($r, $r->code);
 
         }catch (\Exception $e) {
+
+            DB::rollBack();
+            echo $e;
             $r = CustomResponse::intertalServerError("Ocurrió un error en el servidor");
             return response()->json($r, $r->code);
         }
@@ -452,6 +539,11 @@ class TaskController extends Controller
             if(count($task->subTasks) > 0){
                 $this->getCountChildren($task->subTasks);
             }
+
+            foreach ($task->assignedUsers as $assignedUsers){
+                $assignedUsers->is_watcher = $assignedUsers->pivot->is_watcher;
+            }
+
             $task->count_children = $task->children()->count();
         }
 

@@ -154,14 +154,6 @@ class FeatureController extends Controller
                     return $attachment;
                 });
             });
-//            $attachments = $comments->attachments;
-//
-//            $mapAttachments = $attachments->map(function ($attachment){
-//                $attachment->feature_id = $attachment->pivot->feature_id;
-//                $attachment->name = pathinfo(basename($attachment->url),PATHINFO_FILENAME);
-//                unset($attachment->pivot);
-//                return $attachment;
-//            });
 
             $comments->hasMorePages();
             $comments->count();
@@ -468,9 +460,11 @@ class FeatureController extends Controller
         try {
             $this->authorize("create",Feature::class);
 
-            $boardId = $request->board_id;
-            $stageId = $request->stage_id;
-
+            $boardId = $request->input('board_id');
+            $stageId = $request->input('stage_id');
+            $description = $request->description ? $request->input('description') : "";
+//            $due_date = $request->due_date ? Carbon::createFromFormat('Y-m-d H:i:s', $request->due_date) : null;
+            $due_date = $request->due_date ? Carbon::createFromTimestamp($request->input('due_date'))->timestamp : null;
 
             $board = Board::where('id', $boardId)
                 ->where('status', $this->status)
@@ -498,9 +492,6 @@ class FeatureController extends Controller
             if(!empty($features)){
                 $maxPivotOrder = collect($features)->max("pivot.order");
             }
-
-            $description = $request->description ? $request->description : "";
-            $due_date = $request->due_date ? Carbon::createFromFormat('Y-m-d H:i:s', $request->due_date) : null;
 
             $order = $maxPivotOrder + 1;
 
@@ -830,6 +821,7 @@ class FeatureController extends Controller
 
     /**
      * @param FeatureRequest $request
+     * @param $featureId
      * @return JsonResponse
      *
      * Context:
@@ -846,10 +838,11 @@ class FeatureController extends Controller
                 return response()->json($r, $r->code);
             }
 
-            $title = $request->title ? $request->title : $feature->title;
+            $title = $request->input('title');
             //$dueDate = $request->due_date ? Carbon::parse($request->due_date)->format('Y-m-d H:i:s') : $feature->due_date;
-            $dueDate = $request->due_date ? Carbon::createFromTimestamp($request->due_date)->toDateTimeString() : $feature->due_date;
-            $description = $request->description ? trim($request->description) : $feature->description;
+//            $dueDate = $request->due_date ? Carbon::createFromTimestamp($request->due_date)->toDateTimeString() : $feature->due_date;
+            $dueDate = Carbon::createFromTimestamp($request->input('due_date'))->timestamp;
+            $description = trim($request->input('description'));
 
             $feature->title = $title;
             $feature->description = $description;
