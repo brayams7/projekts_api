@@ -29,7 +29,7 @@ class FeatureRequest extends FormRequest
         return [
             'title' => 'max:256',
             //'description' => 'string',
-            'due_date' => 'integer',
+            'due_date' => 'nullable|integer',
         ];
     }
 
