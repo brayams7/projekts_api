@@ -11,7 +11,7 @@ return new class extends Migration
      *
      * @return void
      */
-    public function up()
+    public function up():void
     {
         Schema::create('users', function (Blueprint $table) {
             $table->uuid('id')->primary();
@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('username');
             $table->string('email')->unique();
             $table->text('picture_url')->nullable();
+            $table->string("color",12)->nullable();
 
             $table->string('password');
             $table->rememberToken();
@@ -41,7 +42,7 @@ return new class extends Migration
      *
      * @return void
      */
-    public function down()
+    public function down():void
     {
         Schema::dropIfExists('users');
     }
