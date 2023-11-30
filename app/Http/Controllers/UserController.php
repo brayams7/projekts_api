@@ -76,36 +76,51 @@ class UserController extends Controller
     public function updateProfile(UserRequest $request, $id): JsonResponse
     {
         try {
-            $user = User::where('id',$id)->first();
+            $user = User::where('id',$id)
+                ->where('status',$this->status)
+                ->first();
 
-            $username = $request->has('username') ? $request->username : $user->username;
-            $user ->name = $request->has('name') ? $request->name : $user->name;
-            $user ->email = $request->has('email') ? $request->email : $user->email;
+            if(!$user){
+                $r = CustomResponse::notFound("Usuario no encontrado");
+                return response()->json($r);
+            }
+
+            $user ->username = $request->username;
+            $user ->name = $request->name;
+            $user ->email = $request->email;
+            $user -> color = $request->color;
 
             if ($request->hasFile('picture_url')) {
 
-                $allowedExtensions = ['jpeg', 'png', 'jpg', 'svg'];
+                $picture_url = $user->picture_url;
+
+                if(is_string($picture_url) && $picture_url && strlen($picture_url) > 0){
+
+                    $storage = Storage::disk(Constants::NAME_STORAGE_CLOUD);
+                    $name = substr($user->picture_url,strlen(env('URL_BASE_BUCKET'))-1,strlen($user->picture_url)-1);
+                    if($storage->exists($name)){
+                        $storage->delete($name);
+                    }
+                }
+
                 $file = $request->file('picture_url');
 
                 $extension = strtolower($file->getClientOriginalExtension());
 
-                if ($file->isValid() && in_array($extension, $allowedExtensions)) {
+                $filename = Constants::NAME_DIRECTORY_PROFILE . time() . '.' . $extension;
 
-                    $filename = Constants::NAME_DIRECTORY_PROFILE . time() . '.' . $extension;
-                    $url = env('URL_BASE_BUCKET').$filename;
-                    Storage::disk(Constants::NAME_STORAGE_CLOUD)->put($filename,file_get_contents($file),'public');
-                    $user-> picture_url = $url;
+                $url = env('URL_BASE_BUCKET').$filename;
 
-                } else {
+                Storage::disk(Constants::NAME_STORAGE_CLOUD)->put($filename,file_get_contents($file),'public');
+                $user-> picture_url = $url;
 
-                    $allowedExtensionsString = implode(', ', $allowedExtensions);
-                    $r = CustomResponse::unprocessableEntity($allowedExtensionsString);
-                    return response()->json($r);
+            }else{
 
-                }
+                $filename = substr($user->picture_url,strlen(env('URL_BASE_BUCKET'))-1,strlen($user->picture_url)-1);
+                Storage::disk(Constants::NAME_STORAGE_CLOUD)->delete($filename);
+                $user->picture_url = '';
             }
 
-            $user->username = $username;
             $user -> save();
             $r = CustomResponse::ok($user);
             return response()->json($r);

@@ -28,30 +28,22 @@ class UserRequest extends FormRequest
     public function rules(): array{
 
         return [
-            // 'username' => [
-            //     'string',
-            //     Rule::unique('users', 'username')->ignore($id),
-            // ],
-            // 'name' => 'string',
-            // 'picture_url' => [
-            //     'sometimes',
-            //     'image',
-            //     Rule::dimensions()->maxWidth(1000)->maxHeight(1000),
-            // ],
-            // 'email' => [
-            //     'email',
-            //     Rule::unique('users', 'email')->ignore($id),
-            // ],
+            'username' => 'required|string|max:255',
+            'name' => 'required|string|max:255',
+            'picture_url' => 'nullable|image',
+            'email' => 'email',
+            'color'=>'string|max:12|nullable'
         ];
     }
 
     public function messages(): array
     {
         return [
-            'username.unique' => 'El nombre de usuario ya está en uso.',
-            'picture_url.image' => 'El campo :attribute debe ser una imagen válida.',
-            'picture_url.dimensions' => 'La imagen no debe superar los 1000x1000 píxeles.',
-            'email.unique' => 'El correo electrónico ya está en uso.',
+            'required' => 'El campo es requerido',
+            'string' => 'El campo debe ser un texto',
+            'image' => 'El campo debe ser una imagen',
+            'email' => 'El campo debe ser un correo electrónico',
+            'email.unique' => 'El correo electrónico ya está en uso',
         ];
     }
 
