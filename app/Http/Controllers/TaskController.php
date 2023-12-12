@@ -105,6 +105,8 @@ class TaskController extends Controller
 
             $task->count_children = $task->children()->get()->count();
             $task->tags = $task->tags()->get();
+            $task->list_tracking = [];
+
             foreach ($task->assignedUsers as $assignedUsers){
                 $assignedUsers->is_watcher = $assignedUsers->pivot->is_watcher;
             }
@@ -146,7 +148,7 @@ class TaskController extends Controller
                 return response()->json($r, $r->code);
             }
 
-            $taskChild->task_id =  $taskParent->id;
+            $taskChild->task_id = $taskParent->id;
             $taskChild->save();
 
             $taskParent->count_children = $taskParent->children()->get()->count();
@@ -186,6 +188,9 @@ class TaskController extends Controller
                             ])
                             ->with([
                                 'assignedUsers'
+                            ])
+                            ->with([
+                                'listTracking.user'
                             ]);
                     }
                 ])->first();
@@ -235,7 +240,8 @@ class TaskController extends Controller
                 [
                     'subTasks',
                     'tags',
-                    'assignedUsers'
+                    'assignedUsers',
+                    'listTracking.user'
                 ]
             )
                 ->where('task_id', $taskParentId)
@@ -335,10 +341,17 @@ class TaskController extends Controller
             $task->count_children = $task->children()->get()->count();
 
             $task->tags = $task->tags()->get();
+            $listTracking = $task->listTracking()->get();
 
             foreach ($task->assignedUsers as $assignedUsers){
                 $assignedUsers->is_watcher = $assignedUsers->pivot->is_watcher;
             }
+
+            foreach ($listTracking as $item) {
+                $item->user = $item->user->get();
+            }
+
+            $task->list_tracking = $listTracking;
 
             $r = CustomResponse::ok($task);
             return response()->json($r);
@@ -490,7 +503,7 @@ class TaskController extends Controller
         return $band;
     }
 
-    protected function listOfUsersAssignedToTheTask(Task $task){
+    public function listOfUsersAssignedToTheTask(Task $task){
         try {
             return $task->assignedUsers()->get()
                 ->map(function ($assignment){

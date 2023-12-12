@@ -31,8 +31,8 @@ class StoreWorkspaceRequest extends FormRequest
     {
       if(request()->isMethod("post")){
         return [
-          'name' => 'required|unique:workspaces|max:128',
-          'initials' => 'required|max:2',
+          'name' => 'required|max:128',
+          'initials' => 'required|max:3',
           'description' => 'string',
           'color' => 'required|max:12',
           'user_id' => 'required|uuid',

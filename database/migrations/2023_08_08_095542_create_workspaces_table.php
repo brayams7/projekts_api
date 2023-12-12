@@ -16,7 +16,7 @@ return new class extends Migration
         Schema::create('workspaces', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('name',128);
-            $table->string('initials',2);
+            $table->string('initials',3);
             $table->text("description");
             $table->string("color",12);
             $table->tinyInteger("status");
