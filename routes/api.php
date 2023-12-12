@@ -14,6 +14,7 @@ use \App\Http\Controllers\TaskController;
 use \App\Http\Controllers\TagController;
 use \App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\TrakingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -138,6 +139,15 @@ Route::controller(TagController::class)->group(function (){
     Route::get('/listTags', 'listTags')->middleware('authorization');
     Route::put('/updateTag/{tagId}', 'updateTag')->middleware('authorization');
     Route::delete('/deleteTag/{tagId}', 'deleteTag')->middleware('authorization');
+});
+
+//tracking
+
+Route::controller(TrakingController::class)->group(function (){
+    Route::get('/listTrackingByTask/{taskId}', 'listTrackingByTask')->middleware('authorization');
+    Route::post('/addTrackingToTask/{taskId}', 'addTrackingToTask')->middleware('authorization');
+    Route::delete('/deleteTracking/{trackingId}', 'deleteTrackingByTask')->middleware('authorization');
+    Route::put('/updateTracking/{trackingId}', 'updateTrackingByTask')->middleware('authorization');
 });
 
 //permission

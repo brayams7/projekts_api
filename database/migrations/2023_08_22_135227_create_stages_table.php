@@ -64,7 +64,7 @@ return new class extends Migration
                     'id'=>Uuid::uuid4(),
                     'name'=> 'En QA',
                     'description'=>'Funcionalidades que estan en revisión',
-                    'color'=>"#04a9f4",
+                    'color'=>"#e1169c",
                     'is_default'=>1,
                     'is_final' => 0
                 ],

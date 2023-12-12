@@ -23,6 +23,7 @@ class Traking extends Model
         'day',
         'month',
         'year',
+        'created_at'
     ];
 
     public function task():BelongsTo{

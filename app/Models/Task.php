@@ -52,4 +52,8 @@ class Task extends Model
     public function subTasks():HasMany{
         return $this->children()->with(['subTasks']);
     }
+
+    public function listTracking():HasMany{
+        return $this->hasMany(Traking::class, 'task_id');
+    }
 }
