@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Constants\Constants;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\RegisterRequest;
+use App\Models\AttachmentType;
 use App\Models\CustomResponse;
 use App\Models\Role;
 use App\Models\Session;
@@ -11,6 +14,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -20,74 +24,80 @@ class AuthController extends Controller
 {
     
     
-    public function register(Request $request): JsonResponse
+    public function register(RegisterRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(),[
-            'username' => ['required'],
-            'email' => ['required','email','max:255'],
-            'password' => ['required','min:6'],
-            'name' => ['required'],
-            'role_id'=>['required','uuid'],
-        ],[
-            'required' => 'El Campo es requerido',
-            'numeric'=>'El campo es un tipo decimal Ej: 10.00',
-            'email'=>'El email es incorrecto',
-            'min'=>'La contraseña debe tener al menos 6 caractéres',
-        ]);
+        $name = $request->input('name','');
+        $username = $request->input('username','');
+        $email = $request->input('email','');
+        $password = $request->input('password','');
 
-        if ($validator->fails()) {
-            $r = CustomResponse::badRequest([
-                'data'=>$validator->messages()
-            ]);
-            return response()->json($r, $r->code);
-        }
+        $role = Role::where('name',Constants::ROLE_TYPE_ADMIN)
+            ->select('id')
+            ->first();
 
-        $existUserEmail = User::where('email',$request->email)->first();
-
-        if($existUserEmail){
-            $r = CustomResponse::badRequest("El correo ya existe");
-            return response()->json($r);
-        }
-
-        $role = Role::where('id',$request->role_id)->first();
+        $isUserOrEmail = User::where(function ($query) use ($email, $username){
+            $query->where('email', $email)
+                ->orWhere('username', $username);
+        })
+            ->first();
 
         if(!$role){
             $r = CustomResponse::badRequest("Error en las creadenciales");
             return response()->json($r);
         }
 
+        if($isUserOrEmail){
+            $r = CustomResponse::badRequest("El usuario o correo ya están en uso");
+            return response()->json($r);
+        }
+
+        if(!$request->hasFile('picture_url')){
+            $r = CustomResponse::badRequest('Debes agregar una foto de perfil');
+            return response()->json($r, $r->code);
+        }
+
+        $pictureFile = $request->file('picture_url');
+
+        $fileName = Constants::NAME_DIRECTORY_PROFILE . time() . '.' . $pictureFile->getClientOriginalExtension();
+
+        $attachmentType = AttachmentType::where('mimetype', $pictureFile->getClientMimeType())
+                        ->first();
+
+        if (!$attachmentType) {
+            $r = CustomResponse::badRequest('El formato de la foto no es permitido');
+            return response()->json($r, $r->code);
+        }
+
         try{
+
+            Storage::disk(Constants::NAME_STORAGE_CLOUD)->put($fileName,file_get_contents($pictureFile),'public');
+
+            $urlPicture = env('URL_BASE_BUCKET') . $fileName;
+
             $user = User::create([
-                'name'=>$request->name,
-                'username'=>$request->username,
-                'email'=>$request->email,
-                'password'=>Hash::make($request->password),
-                'picture_url'=>'',
+                'name'=>$name,
+                'username'=>$username,
+                'email'=>$email,
+                'password'=>Hash::make($password),
+                'picture_url'=>$urlPicture,
                 'role_id'=>$role->id
             ]);
-    
+
             $token = JWTAuth::fromUser($user); // Validar el token y obtener el usuario autenticado
-            
+
             JWTAuth::setToken($token); //permite establecer manualmente un token JWT
-    
+
             $payload = JWTAuth::getPayload();
             $expires = $payload->get('exp');
-            
+
             $session = Session::create([
                 'token'=>$token,
                 'user_id'=>$user->id,
                 'expires'=>$expires
             ]);
 
-            // $user = $user->get();
-    
             $user->session = $session;
-            
-            $r = CustomResponse::ok([
-                'user'=>$user,
-                // 'token'=>$token
-            ]);
-
+            $r = CustomResponse::ok($user);
             return response()->json($r);
             
         }catch(Exception $e){

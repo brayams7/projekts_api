@@ -117,7 +117,6 @@ class TrakingController extends Controller
             return response()->json($r, $r->code);
 
         }catch (\Exception $e) {
-            echo "hola";
             $r = CustomResponse::intertalServerError("Ocurrió un error en el servidor");
             return response()->json($r, $r->code);
         }
