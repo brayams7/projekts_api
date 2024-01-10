@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Http\Requests\UserRequest;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Validator;
 use \Illuminate\Validation\ValidationException;
 use \Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Storage;
@@ -71,6 +72,66 @@ class UserController extends Controller
         }catch (\Exception $e) {
             $r = CustomResponse::intertalServerError("Ocurrió un error en el servidor");
             return response()->json($r, $r->code);
+        }
+    }
+
+    public function isUniqueUsername(Request $request):JsonResponse{
+        try {
+            $validator = Validator::make($request->all(),
+                [
+                    'username'=>'required'
+                ],
+                [
+                    'username'=>'El campo es requerido'
+                ]
+            );
+
+            if($validator->fails()){
+                $r = CustomResponse::badRequest($validator->messages());
+                return response()->json($r, $r->code);
+            }
+
+            $username = $request->input('username');
+
+            $user = User::where('username', $username)->first();
+
+            $r = CustomResponse::ok((bool) $user);
+
+            return response()->json($r,$r->code);
+
+        }catch (\Exception $e){
+            $r = CustomResponse::intertalServerError("Ocurrió un error en el servidor");
+            return response()->json($r);
+        }
+    }
+
+    public function isUniqueEmail(Request $request):JsonResponse{
+        try {
+            $validator = Validator::make($request->all(),
+                [
+                    'email'=>'required|email'
+                ],
+                [
+                    'email'=>'El campo dede ser un correo'
+                ]
+            );
+
+            if($validator->fails()){
+                $r = CustomResponse::badRequest($validator->messages());
+                return response()->json($r, $r->code);
+            }
+
+            $email = $request->input('email');
+
+            $user = User::where('email', $email)->first();
+
+            $r = CustomResponse::ok((bool) $user);
+
+            return response()->json($r,$r->code);
+
+        }catch (\Exception $e){
+            $r = CustomResponse::intertalServerError("Ocurrió un error en el servidor");
+            return response()->json($r);
         }
     }
     public function updateProfile(UserRequest $request, $id): JsonResponse
