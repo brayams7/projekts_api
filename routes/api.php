@@ -35,14 +35,14 @@ use App\Http\Controllers\TrakingController;
 Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::get('/auth/refresh_token', [AuthController::class, 'refreshToken']);
-
+Route::post('/users/isUniqueEmailUser', [UserController::class, 'isUniqueEmail']);
+Route::post('/users/isUniqueUsernameUser', [UserController::class, 'isUniqueUsername']);
 
 Route::controller(UserController::class)->group(function () {
     Route::get('/users', 'index')->middleware('authorization');
     Route::get('/users/searchUsersByEmailOrUsername', 'searchUsersByEmailOrUsername')->middleware('authorization');
     Route::put('/users/toggle-status/{id}', 'toggleUserStatus')->middleware('authorization');
     Route::post('/users/update-profile/{id}', 'updateProfile')->middleware('authorization');
-
 });
 
 //Workpaces types
@@ -147,7 +147,7 @@ Route::controller(TrakingController::class)->group(function (){
     Route::get('/listTrackingByTask/{taskId}', 'listTrackingByTask')->middleware('authorization');
     Route::post('/addTrackingToTask/{taskId}', 'addTrackingToTask')->middleware('authorization');
     Route::delete('/deleteTracking/{trackingId}', 'deleteTrackingByTask')->middleware('authorization');
-    Route::put('/updateTracking/{trackingId}', 'updateTrackingByTask')->middleware('authorization');
+    Route::put ('/updateTracking/{trackingId}', 'updateTrackingByTask')->middleware('authorization');
 });
 
 //permission

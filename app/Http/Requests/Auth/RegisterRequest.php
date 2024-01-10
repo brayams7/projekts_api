@@ -1,20 +1,20 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\Auth;
 
 use App\Models\CustomResponse;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class TrackingRequest extends FormRequest
+class RegisterRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      *
      * @return bool
      */
-    public function authorize() : bool
+    public function authorize(): bool
     {
         return true;
     }
@@ -24,17 +24,14 @@ class TrackingRequest extends FormRequest
      *
      * @return array<string, mixed>
      */
-    public function rules(): array
-    {
+    public function rules(): array {
         return [
-            'description' => 'nullable|max:512',
-            'hours' => 'required|numeric',
-            'minutes' => 'required|numeric',
-            'full_minutes' => 'required|numeric',
-            'date' => 'nullable|date_format:m-d-Y',
-            'day' => 'nullable|numeric',
-            'month' => 'nullable|numeric',
-            'year' => 'nullable|numeric',
+            'username'=>'required',
+            'email' => 'required|email|max:255',
+            'password'=>'min:8',
+            'name' => 'required',
+            'picture_url'=>'required|mimetypes:image/jpg,image/png,image/jpeg',
+//            'role_id'=>'required,uuid'
         ];
     }
 
@@ -43,13 +40,13 @@ class TrackingRequest extends FormRequest
      *
      * @return array
      */
-    public function messages(): array
-    {
+    public function messages(): array {
         return [
-            'required' => 'El campo es requerido',
-            'numeric' => 'El campo debe ser un entero',
-            'date:date_format' => 'El formato válido es mm-dd-yyyy',
-            'date' => 'El formato válido es mm-dd-yyyy',
+            'required' => 'El Campo es requerido',
+            'email:unique'=>'el correo ya existe',
+            'email'=>'El email es incorrecto',
+            'min'=>'La contraseña debe tener al menos 8 caractéres',
+            'picture_url:mime'=>'Los formatos válidos son: jpg,png,jpeg',
         ];
     }
 
