@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Constants\Constants;
 use App\Http\Requests\AddMemberToWorkspaceRequest;
 use App\Http\Requests\StoreWorkspaceRequest;
+use App\Jobs\SendEmailForEmailVerification;
+use App\Jobs\SendEmailToInviteAMember;
 use App\Mail\InviteMemberToWorkspace;
 use App\Models\CustomResponse;
 use App\Models\User;
@@ -15,15 +17,11 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use \Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Mail;
-use Tymon\JWTAuth\Claims\Collection;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Exceptions\TokenExpiredException;
 use Tymon\JWTAuth\Exceptions\TokenInvalidException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Facades\JWTFactory;
-use Tymon\JWTAuth\JWT;
-use Tymon\JWTAuth\Payload;
-use Tymon\JWTAuth\Validators\PayloadValidator;
 
 class WorkspaceController extends Controller
 {
@@ -236,7 +234,7 @@ class WorkspaceController extends Controller
 
                     $url = Constants::BASE_APP_FE.'inviteTeam?email='.$email.'&token='.$token;
 
-                    Mail::to($email)->send(new InviteMemberToWorkspace($url, $workspace->name));
+                    SendEmailToInviteAMember::dispatch($email, $url, $workspace);
 
                     $r = CustomResponse::ok($url);
                 }
