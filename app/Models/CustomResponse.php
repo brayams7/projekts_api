@@ -42,14 +42,13 @@ class CustomResponse {
     {
         return new CustomResponse($msg, 500, "INTERNAL_SERVER_ERROR");
     }
-    public static function notFound($msg = null){
-        $instance = new CustomResponse($msg, 404, "NOTFOUND");
-        return $instance;
-    }
-    public static function unprocessableEntity($message=null)
+    public static function notFound($msg = null): CustomResponse
     {
-        $instance = new CustomResponse('unprocessable_entity', 422, $message);
-        return $instance;
+        return new CustomResponse($msg, 404, "NOTFOUND");
+    }
+    public static function unprocessableEntity($message=null): CustomResponse
+    {
+        return new CustomResponse('unprocessable_entity', 422, $message);
     }
 
 }
