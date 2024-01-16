@@ -5,15 +5,20 @@ namespace App\Http\Controllers\Auth;
 use App\Constants\Constants;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\VerificationEmailRequest;
+use App\Jobs\SendEmailForEmailVerification;
+use App\Mail\VerificationCode;
 use App\Models\AttachmentType;
 use App\Models\CustomResponse;
 use App\Models\Role;
 use App\Models\Session;
 use App\Models\User;
+use App\Utils\Util;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Tymon\JWTAuth\Exceptions\JWTException;
@@ -22,10 +27,9 @@ use \Illuminate\Http\JsonResponse;
 
 class AuthController extends Controller
 {
+    private int $status = 1;
     
-    
-    public function register(RegisterRequest $request): JsonResponse
-    {
+    public function register(RegisterRequest $request): JsonResponse{
         $name = $request->input('name','');
         $username = $request->input('username','');
         $email = $request->input('email','');
@@ -74,13 +78,16 @@ class AuthController extends Controller
 
             $urlPicture = env('URL_BASE_BUCKET') . $fileName;
 
+            $verificationCode = Util::generateVerificationCode();
+
             $user = User::create([
                 'name'=>$name,
                 'username'=>$username,
                 'email'=>$email,
                 'password'=>Hash::make($password),
                 'picture_url'=>$urlPicture,
-                'role_id'=>$role->id
+                'role_id'=>$role->id,
+                'verification_code'=>$verificationCode
             ]);
 
             $token = JWTAuth::fromUser($user); // Validar el token y obtener el usuario autenticado
@@ -97,12 +104,47 @@ class AuthController extends Controller
             ]);
 
             $user->session = $session;
+
+//            Mail::to($email)->send(new VerificationCode($verificationCode, $name));
+            SendEmailForEmailVerification::dispatch($email, $verificationCode, $name);
             $r = CustomResponse::ok($user);
             return response()->json($r);
             
         }catch(Exception $e){
             $r = CustomResponse::badRequest("Ocurrió un error en el servidor");
             return response()->json($r);
+        }
+    }
+
+    public function verifyEmail(VerificationEmailRequest $request) : JsonResponse{
+        try {
+            $email = $request->input('email');
+            $verificationCode = $request->input('code');
+
+            $user = User::where('email',$email)
+                    ->where('verification_code',$verificationCode)
+                    ->where('status', $this->status)
+                    ->first();
+
+            if(!$user){
+                $r = CustomResponse::badRequest("El código de verificación es incorrecto");
+                return response()->json($r,$r->code);
+            }
+
+            if($user->email_verified_at){
+                $r = CustomResponse::ok("Esta cuenta ya ha sido verificado");
+                return response()->json($r);
+            }
+
+            $user->email_verified_at = now()->timestamp;
+            $user->save();
+
+            $r = CustomResponse::ok();
+            return response()->json($r);
+
+        }catch (Exception $e){
+            $r = CustomResponse::intertalServerError("Ocurrió un error en el servidor");
+            return response()->json($r,$r->code);
         }
     }
 
