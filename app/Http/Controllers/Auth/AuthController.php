@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Constants\Constants;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Requests\Auth\VerificationEmailRequest;
 use App\Jobs\SendEmailForEmailVerification;
@@ -148,28 +149,11 @@ class AuthController extends Controller
         }
     }
 
-    public function login(Request $request): JsonResponse
+    public function login(LoginRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(),[
-            'email' => ['required','email','max:255'],
-            'password' => ['required','min:6'],
-            
-        ],[
-            'required' => 'El Campo es requerido',
-            'email'=>'El email es incorrecto',
-            'min'=>'La contraseña debe tener al menos 6 caractéres',
-        ]);
 
-
-        if ($validator->fails()) {
-            $r = CustomResponse::badRequest([
-                'data'=>$validator->messages()
-            ]);
-            return response()->json($r,$r->code);
-        }
-
-        $email = $request->email;
-        $password = $request->password;
+        $email = $request->input('email');
+        $password = $request->input('password');
 
         $user = User::where('email', $email)
                 ->where('status', 1)

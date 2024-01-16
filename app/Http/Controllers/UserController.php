@@ -32,6 +32,7 @@ class UserController extends Controller
                     ->orWhere('email', 'LIKE', '%' . $text . '%');
                 })
                 ->where("status", $this->status)
+                ->whereNot('email_verified_at', null)
                 ->get();
 
             $r = CustomResponse::ok($users);
