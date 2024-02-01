@@ -15,8 +15,18 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
 
-            $table->bigInteger("email_verified_at")->nullable()->default(null);
-            $table->string("verification_code",4)->nullable()->default(null);
+            if (!Schema::hasColumn('users', 'email_verified_at')) {
+                $table->bigInteger("email_verified_at")->nullable()->default(null);
+            }
+
+            if (!Schema::hasColumn('users', 'verification_code')) {
+                $table->string("verification_code", 4)->nullable()->default(null);
+            }
+
+            if(!Schema::hasColumn("users", "color")){
+                $table->string("color",12)->nullable()->default(null);
+            }
+
         });
     }
 

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Auth;
 
 use App\Models\CustomResponse;
+use App\Rules\MimeTypeRule;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -30,7 +31,7 @@ class RegisterRequest extends FormRequest
             'email' => 'required|email|max:255',
             'password'=>'min:8',
             'name' => 'required',
-            'picture_url'=>'required|mimetypes:image/jpg,image/png,image/jpeg',
+            //'picture_url'=>['nullable',new MimeTypeRule],
 //            'role_id'=>'required,uuid'
         ];
     }

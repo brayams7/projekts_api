@@ -35,7 +35,8 @@ class User extends Authenticatable implements JWTSubject
         'role_id',
         'picture_url',
         'verification_code',
-        'email_verified_at'
+        'email_verified_at',
+        'color'
     ];
 
     /**
@@ -48,7 +49,6 @@ class User extends Authenticatable implements JWTSubject
         'remember_token',
         'pivot',
         'created_at',
-        'verification_code'
     ];
 
     public function role(){
