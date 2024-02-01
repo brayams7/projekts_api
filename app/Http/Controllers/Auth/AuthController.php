@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\Validator;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use \Illuminate\Http\JsonResponse;
+use function Faker\Provider\pt_BR\check_digit;
 
 class AuthController extends Controller
 {
@@ -35,6 +36,8 @@ class AuthController extends Controller
         $username = $request->input('username','');
         $email = $request->input('email','');
         $password = $request->input('password','');
+        $color = $request->input('color','');
+        $urlPicture = null;
 
         $role = Role::where('name',Constants::ROLE_TYPE_ADMIN)
             ->select('id')
@@ -48,36 +51,39 @@ class AuthController extends Controller
 
         if(!$role){
             $r = CustomResponse::badRequest("Error en las creadenciales");
-            return response()->json($r);
+            return response()->json($r, $r->code);
         }
 
         if($isUserOrEmail){
             $r = CustomResponse::badRequest("El usuario o correo ya están en uso");
-            return response()->json($r);
-        }
-
-        if(!$request->hasFile('picture_url')){
-            $r = CustomResponse::badRequest('Debes agregar una foto de perfil');
             return response()->json($r, $r->code);
         }
+        echo $request->file('file');
 
-        $pictureFile = $request->file('picture_url');
-
-        $fileName = Constants::NAME_DIRECTORY_PROFILE . time() . '.' . $pictureFile->getClientOriginalExtension();
-
-        $attachmentType = AttachmentType::where('mimetype', $pictureFile->getClientMimeType())
-                        ->first();
-
-        if (!$attachmentType) {
-            $r = CustomResponse::badRequest('El formato de la foto no es permitido');
+        if(!$color && !$request->hasFile('file')){
+            $r = CustomResponse::badRequest("Debes de agregar un color de avatar o agregar una foto de perfil");
             return response()->json($r, $r->code);
         }
 
         try{
 
-            Storage::disk(Constants::NAME_STORAGE_CLOUD)->put($fileName,file_get_contents($pictureFile),'public');
+            if($request->hasFile('file')){
 
-            $urlPicture = env('URL_BASE_BUCKET') . $fileName;
+                $pictureFile = $request->file('file');
+
+                $fileName = Constants::NAME_DIRECTORY_PROFILE . time() . '.' . $pictureFile->getClientOriginalExtension();
+
+                $attachmentType = AttachmentType::where('mimetype', $pictureFile->getClientMimeType())
+                    ->first();
+
+                if (!$attachmentType) {
+                    $r = CustomResponse::badRequest('El formato de la foto no es permitido');
+                    return response()->json($r, $r->code);
+                }
+
+                $urlPicture = env('URL_BASE_BUCKET') . $fileName;
+                Storage::disk(Constants::NAME_STORAGE_CLOUD)->put($fileName,file_get_contents($pictureFile),'public');
+            }
 
             $verificationCode = Util::generateVerificationCode();
 
@@ -88,7 +94,9 @@ class AuthController extends Controller
                 'password'=>Hash::make($password),
                 'picture_url'=>$urlPicture,
                 'role_id'=>$role->id,
-                'verification_code'=>$verificationCode
+                'verification_code'=>$verificationCode,
+                'color'=>$color,
+                'email_verified_at'=>null
             ]);
 
             $token = JWTAuth::fromUser($user); // Validar el token y obtener el usuario autenticado
@@ -104,16 +112,23 @@ class AuthController extends Controller
                 'expires'=>$expires
             ]);
 
-            $user->session = $session;
 
-//            Mail::to($email)->send(new VerificationCode($verificationCode, $name));
+            $user->session = $session;
+            $permissions = $role->permissions()->get();
+
             SendEmailForEmailVerification::dispatch($email, $verificationCode, $name);
-            $r = CustomResponse::ok($user);
-            return response()->json($r);
+
+            $r = CustomResponse::ok([
+                'user'=>$user,
+                'permissions'=>$permissions,
+                'role'=>$role
+            ]);
+
+            return response()->json($r, $r->code);
             
         }catch(Exception $e){
             $r = CustomResponse::badRequest("Ocurrió un error en el servidor");
-            return response()->json($r);
+            return response()->json($r, $r->code);
         }
     }
 
@@ -140,7 +155,7 @@ class AuthController extends Controller
             $user->email_verified_at = now()->timestamp;
             $user->save();
 
-            $r = CustomResponse::ok();
+            $r = CustomResponse::ok($user);
             return response()->json($r);
 
         }catch (Exception $e){
@@ -149,8 +164,33 @@ class AuthController extends Controller
         }
     }
 
-    public function login(LoginRequest $request): JsonResponse
-    {
+    public function refreshVerificationCode(Request $request, $email):JsonResponse{
+        try {
+            $user = User::where('email',$email)
+                ->where('status', $this->status)
+                ->first();
+
+            if(!$user){
+                $r = CustomResponse::badRequest("Ocurrió un error en el servidor");
+                return response()->json($r,$r->code);
+            }
+            $verificationCode = Util::generateVerificationCode();
+
+            $user->verification_code = $verificationCode;
+            $user->save();
+
+            SendEmailForEmailVerification::dispatch($email, $verificationCode, $user->name);
+
+            $r = CustomResponse::ok($user);
+
+            return response()->json($r, $r->code);
+
+        }catch (Exception $e){
+            $r = CustomResponse::intertalServerError("Ocurrió un error en el servidor");
+            return response()->json($r,$r->code);
+        }
+    }
+    public function login(LoginRequest $request): JsonResponse{
 
         $email = $request->input('email');
         $password = $request->input('password');

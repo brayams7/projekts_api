@@ -38,6 +38,7 @@ Route::get('/auth/refresh_token', [AuthController::class, 'refreshToken']);
 Route::post('/users/isUniqueEmailUser', [UserController::class, 'isUniqueEmail']);
 Route::post('/users/isUniqueUsernameUser', [UserController::class, 'isUniqueUsername']);
 Route::post('/users/verify_email', [AuthController::class, 'verifyEmail']);
+Route::post('/users/refreshVerificationCode/{email}', [AuthController::class, 'refreshVerificationCode']);
 
 Route::controller(UserController::class)->group(function () {
     Route::get('/users', 'index')->middleware('authorization');
