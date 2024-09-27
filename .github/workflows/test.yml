@@ -1,0 +1,31 @@
+name: test-githubactions
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+      - uses: actions/checkout@v4
+      - name: setup python
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          
+      - name: run script
+      - run: python my_script.py
+
+      - name: Commit and push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Update repo
+          commit_user_name: Brayck [Github Actions]
+          commit_user_email: brayamsbilgs@gmail.com
+          commit_autor: brayck
+  
